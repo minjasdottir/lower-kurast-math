@@ -53,10 +53,10 @@ PATTERNS_P3 = {
     "Um":  (7,  9),   # weighted: 7.4
     "Mal": (12, 12),  # weighted: 12.0
     "Ist": (8,  10),  # weighted: 8.4
-    "Gul": (8,  10),  # weighted: 8.4
-    "Vex": (4,  6),   # weighted: 4.4
-    "Ohm": (3,  3),   # weighted: 3.0
-    "Lo":  (2,  2),   # weighted: 2.0
+    "Gul": (4,  6),   # weighted: 4.4
+    "Vex": (3,  3),   # weighted: 3.0
+    "Ohm": (2,  2),   # weighted: 2.0
+    "Lo":  (4,  4),   # weighted: 4.0
     "Sur": (4,  5),   # weighted: 4.2
     "Ber": (2,  2),   # weighted: 2.0
 }
