@@ -82,13 +82,13 @@ Do **not** explore the entire Lower Kurast map on foot or tele-scout every corne
 To hit the sub-25s benchmarks:
 - **Sorceress FCR Breakpoints:** Run at the **105% Faster Cast Rate (8-frame Teleport)** breakpoint, or at minimum **63% FCR** (9 frames). If you don't have those items yet on a fresh single-player account, you can moat-trick Hell Mephisto for core mid-level caster gear (*Skin of the Vipermagi*, *Magefist*, etc.).
 - **The Act IV Town Reset Phase:** In Act III (Kurast Docks), characters cannot cast *Teleport* in town and spawn far down on the docks, forcing a long walk to the waypoint (at best expedited with a *Harmony* bow's Vigor aura) before *Telekinesis* can reach it. Instead, execute an **Act IV reset phase**: on a circular map (WP → CF 1 → CF 2 → WP), end your run by clicking the LK Waypoint, traveling to **Act IV (The Pandemonium Fortress)**, and Saving & Exiting there. In Act IV, you spawn directly next to the Waypoint, allowing you to instantly cast *Telekinesis* on the waypoint with zero walking and jump straight back into LK!
-- **Key Reserve:** Because roughly 1 in 5 superchests spawns locked, keep a dedicated $4 \times 3$ block of keys in your inventory (12 stacks = $144\text{ keys}$, bought from Halbu or Jamella in Act IV). This covers $\approx 120\text{ runs}$ without interrupting your farming rhythm. Skipping locked chests forfeits 20% of your drop capacity!
+- **Key Reserve:** Because roughly 1 in 5 superchests spawns locked, keep a dedicated 4 × 3 block of keys in your inventory (12 stacks = 144 keys, bought from Halbu or Jamella in Act IV). This covers ≈ 120 runs without interrupting your farming rhythm. Skipping locked chests forfeits 20% of your drop capacity!
 
 #### Map Optimization Caveat: Weapon & Armor Racks (Seed-Locked Base Harvesting)
 
 A consideration for you might be weapon and armor racks, and you might hit a map that, while being mediocre, drops a base that you need, such as **Thresher** or **Cryptic Axe** (for *Infinity* or *Insight*), **Mancatcher** (*Infinity* only), **Phase Blades** (for *Grief*), and **Mage Plates** / **Dusk Shrouds** (for *Enigma*). In that case, it might be reasonable to keep the map.
 
-Because Lower Kurast is Area Level 80, racks drop up to $\text{qlvl } 79$ ($\text{ilvl} = \text{alvl} - 1$). This means Threshers ($\text{qlvl } 71$) *can* drop, but higher-qlvl bases like **Giant Threshers** ($\text{qlvl } 86$), **Colossus Swords** ($\text{qlvl } 80$), and **Archon Plates** ($\text{qlvl } 84$) cannot drop unless terrorized. The deeper mechanics of seed-locked rack farming are beyond the scope of this guide.
+Because Lower Kurast is Area Level 80, racks drop up to qlvl 79 (ilvl = alvl - 1). This means Threshers (qlvl 71) *can* drop, but higher-qlvl bases like **Giant Threshers** (qlvl 86), **Colossus Swords** (qlvl 80), and **Archon Plates** (qlvl 84) cannot drop unless terrorized. The deeper mechanics of seed-locked rack farming are beyond the scope of this guide.
 
 #### Balancing Reroll Time Against Your Farming Goal
 
@@ -192,7 +192,7 @@ The golden rules of Lower Kurast running are:
 
 1. **Roll a Sub-22s Circular Loop:** Spend 10–15 minutes securing a map where both campfires loop smoothly back to the waypoint (`WP → CF 1 → CF 2 → WP → Act IV`).
 2. **Always Run `/players 7`:** Never drop to `/p5` or `/p3`, and never run `/p8` (same loot as `/p7`, but +50% monster HP).
-3. **Practice "Lazy" (Just-in-Time) Cubing:** Keep Pul through Vex uncubed until you reach your goal. Passively maintain "minimum gem diversity" by stashing lower-grade gems during Normal and Nightmare playthroughs so you have Flawed Amethysts ready for $2\text{ Sur} \to \text{Ber}$.
+3. **Practice "Lazy" (Just-in-Time) Cubing:** Keep Pul through Vex uncubed until you reach your goal. Passively maintain "minimum gem diversity" by stashing lower-grade gems during Normal and Nightmare playthroughs so you have Flawed Amethysts ready for 2 Sur → Ber.
 4. **Never Cube Lo Runes Upward:** Natural Lo drops are rare (2 patterns on `/p7`) and essential for *Grief* and *Fortitude*. Withholding Lo delays *Infinity* by only 191 runs—a trivial price to retain physical endgame gear.
 5. **Ignore the Clutter:** Pop the 6 chests, snatch orange Pul+ labels, take the waypoint to Act IV, and reset.
 

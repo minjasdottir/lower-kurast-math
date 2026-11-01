@@ -81,7 +81,7 @@ print(f"90th percentile drought:{result.quantiles.p90} runs")
 
 ### Socket Reservation vs. Cubing Ladder (*Faith*)
 
-Starting from scratch, *Faith* (`Ohm + Jah + Lem + Eld`) requires Jah ($1{,}024$ Pul-units) plus Ohm ($64$ Pul-units), totaling $1{,}088$ Pul-units (**3,021.6 runs**). 
+Starting from scratch, *Faith* (`Ohm + Jah + Lem + Eld`) requires Jah (1,024 Pul-units) plus Ohm (64 Pul-units), totaling 1,088 Pul-units (**3,021.6 runs**). 
 
 * **Starting with 1 Ohm:**
   When you supply 1 Ohm, the tool reserves that Ohm for the weapon socket:
@@ -89,13 +89,13 @@ Starting from scratch, *Faith* (`Ohm + Jah + Lem + Eld`) requires Jah ($1{,}024$
   [+] Recipe Slots Reserved:    1x Ohm  [OK]
   [-] Missing Recipe Runes:     2x Ber (Remaining W = 1024 Pul units)
   ```
-  That Ohm is **reserved for the Bow**, not burned in the Horadric Cube! You now only need the Jah grind ($2\text{ Ber} = 1{,}024$ Pul units), dropping your expected runs to **2,865.3 runs** (**156.3 runs saved**).
+  That Ohm is **reserved for the Bow**, not burned in the Horadric Cube! You now only need the Jah grind (2 Ber = 1,024 Pul units), dropping your expected runs to **2,865.3 runs** (**156.3 runs saved**).
 * **Starting with a 2nd Ohm (`Ohm: 2`):**
   The first Ohm satisfies the socket, and the second Ohm enters the cubing ladder toward Jah (+64 Pul-units). Expected runs immediately drop from 2,865.3 to **2,714.6 runs** (**an additional 150.7 runs saved**)!
 
 ### `/players 5` Is Irrational (*Ice* Case Study)
 
-If ever there were a case for `/players 5`, the *Ice* runeword should be that case. It requires `Jah + Lo` ($1{,}152$ Pul units: 2 Ber + 1 Lo in LK). This is the single strongest hypothetical scenario for `/players 5` advocates, because `/players 5` boasts **4 direct Lo patterns** and **4 direct Ber patterns** (versus only 2 of each on `/players 7`).
+If ever there were a case for `/players 5`, the *Ice* runeword should be that case. It requires `Jah + Lo` (1,152 Pul units: 2 Ber + 1 Lo in LK). This is the single strongest hypothetical scenario for `/players 5` advocates, because `/players 5` boasts **4 direct Lo patterns** and **4 direct Ber patterns** (versus only 2 of each on `/players 7`).
 
 * **The Reality:** Even on *Ice*, **`/players 7` strictly dominates across both the mean and the tail**:
   * **Expected Runs:** **3,183.4 runs** on `/p7` vs. **3,227.2 runs** on `/p5`.
