@@ -31,7 +31,7 @@
 \begin{document}
 
 \begin{abstract}
-In unseeded single-player \emph{Diablo~II: Resurrected}, repeatedly opening the six ``superchests'' in Lower Kurast (LK) on \texttt{/players~7} is the best way to farm High Runes (Vex through Ber) for early progression and endgame runewords on a Holy Grail run. Due to the sheer length and right-skewed variance of the grind, players frequently adopt superstitious rituals (such as kicking logs or varying movement paths to ``un-stick'' the random number generator) or ineffective collateral-looting strategies to cope psychologically, which actively delays their desired payoff. Section~2 provides concrete, optimal farming guidance, giving exact expected run counts to cube up to every High Rune and major runeword (\emph{Heart of the Oak}, \emph{Call to Arms}, \emph{Grief}, \emph{Infinity}, and \emph{Enigma}). Sections~3--7 detail all the math, showing why superstition, collateral farming, and \texttt{/players~5} harm players, and explaining how exact expected run counts are calculated using absorbing Markov chains.
+In unseeded single-player \emph{Diablo~II: Resurrected}, repeatedly opening the six ``superchests'' in Lower Kurast (LK) on \texttt{/players~7} is the best way to farm High Runes (Vex through Ber) for early progression and endgame runewords on a Holy Grail run. Due to the sheer length and right-skewed variance of the grind, players frequently adopt superstitious rituals (such as kicking logs or varying movement paths to ``un-stick'' the random number generator) or ineffective collateral-looting strategies to cope psychologically, which actively delays their desired payoff. Section~2 provides concrete, optimal farming guidance, giving exact expected run counts to cube up to every High Rune and major runeword (\emph{Heart of the Oak}, \emph{Call to Arms}, \emph{Grief}, \emph{Infinity}, and \emph{Enigma}). Sections~3--7 detail all the math, showing why superstition, collateral farming, and \texttt{/players~5} harm players, and explaining how exact expected run counts are calculated using absorbing Markov chains. Appendices~A--C provide comprehensive pattern census tables for \texttt{/players~3}, \texttt{5}, and \texttt{7}, weighted odds and time reconciliations matching community calculators (such as \texttt{d2runes.io}), and an explicit numerical presentation of the Horadric Cubing Markov transition matrix $P$.
 \end{abstract}
 
 \maketitle
@@ -652,7 +652,251 @@ Far from proving that ``this is why you run Lower Kurast on \texttt{/players~5},
 
 In unseeded single-player \emph{Diablo~II: Resurrected}, the Lower Kurast superchest grind is governed by a stationary Bernoulli process with $p_{\text{run}} \approx 1/455.51$ for Vex--Ber on \texttt{/players~7} under the exact locked/unlocked chest tables reverse-engineered by \texttt{Fruit}~\cite{fruit_d2pg} and verified by \texttt{fearedbliss}~\cite{fearedbliss_lk}. Because the game's PRNG transitions are unweighted and initial session seeds are drawn from unknown system entropy, performing ``random actions'' prior to opening superchests merely applies a measure-preserving shift to a uniform distribution, leaving drop probabilities strictly invariant. Prolonged dry spells of $2{,}000$ to $2{,}460$ runs are $2.50\sigma$--$2.84\sigma$ Gaussian-equivalent tail events ($1.23\%$ to $0.45\%$ single-wait probability, or $16.98\%$ to $6.52\%$ across a $15$-High-Rune career), and the fact that \texttt{Dead\_Sett}'s first High Rune dropped $461$ runs after run $2{,}000$ matches the unconditional memoryless expectation ($\mu_T = 455.51$ runs) to within $1.2\%$. Finally, when Horadric Cubing is modeled via an exact binary-radix absorbing Markov chain, \texttt{/players~7} strictly dominates \texttt{/players~5} in expected runs and tail risk for every rune from Mal through Ber—including the Lo rune ($1{,}569.9$ vs.\ $1{,}714.2$ expected runs). While \texttt{/players~5} yields a trivial $5\%$ edge for targeting isolated Pul or Um runes, targeting mid-runes in LK rather than at the Hell Countess is irrational, and doing so sacrifices the massive yield of Mal--Ber runes. Ultimately, the antidotes to a brutal Lower Kurast drought are not log-kicking rituals or \texttt{/players~5} detours, but a fast two-campfire map, a ruthless loot filter, and the Horadric Cube: the generator is not stuck, so keep teleporting, cube your Puls through Sur, and let the law of large numbers do the rest.
 
-\begin{thebibliography}{9}
+\appendix
+
+\section{Exact Lower Kurast Pattern Counts across Player Settings (/players~3, 5, 7)}
+\label{app:patterns}
+
+In the \emph{Diablo~II: Lord of Destruction} (patch 1.13c+) and \emph{Diablo~II: Resurrected} game engines, Lower Kurast superchests generate drops by sampling from an unrolled sequence of $N_{\text{pat}} = 2^{16} - 2 = 65{,}534$ seed states ($\mathtt{0x0001}$ through $\mathtt{0xFFFE}$). Each superchest can spawn either \textbf{unlocked} (with probability $q_{\text{un}} = 0.80$) or \textbf{locked} (with probability $q_{\text{lk}} = 0.20$), derived from the Normal monster level ($\lfloor 22/2 \rfloor + 8 = 19\% \approx 20\%$) in \texttt{levels.txt}~\cite{nefarius_levels}.
+
+When a chest spawns locked, picking the lock (using a key from inventory or playing an Assassin) executes an additional item-drop routine within the engine before popping the contents. For certain runes and player settings, this altered PRNG execution sequence converts patterns that would otherwise drop miscellaneous items into rune drops, resulting in slightly higher pattern counts for locked chests (e.g., $+2$ locked patterns for Pul on \texttt{/players~3}, $+2$ for Sur on \texttt{/players~5}, and $+2$ for Ist on \texttt{/players~7}).
+
+Table~\ref{tab:app_patterns} presents the complete census of reverse-engineered superchest pattern counts for every rune from Pul (\#21) through Ber (\#30) across all viable player settings: \texttt{/players~3} (and \texttt{4}), \texttt{/players~5} (and \texttt{6}), and \texttt{/players~7} (and \texttt{8}). Because the single-player \texttt{NoDrop} divisor only updates on odd player counts, even settings share identical drop tables with their preceding odd setting. These figures follow the clean-room binary analysis by \texttt{Fruit}~\cite{fruit_d2pg} (\texttt{d2pg}), archival validation by \texttt{fearedbliss}~\cite{fearedbliss_lk}, and match the tables compiled by \texttt{TheHappyDev} on \texttt{d2runes.io}~\cite{thehappydev_d2runes}.
+
+\begin{table}[htbp]
+\centering
+\caption{Complete Lower Kurast superchest pattern counts (out of $N_{\text{pat}} = 65{,}534$) for Unlocked ($80\%$) and Locked ($20\%$) chests across player settings \texttt{/players~3--8}.}
+\label{tab:app_patterns}
+\footnotesize
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{@{}l ccc ccc ccc@{}}
+\toprule
+& \multicolumn{3}{c}{\textbf{\texttt{/players 3--4}}} & \multicolumn{3}{c}{\textbf{\texttt{/players 5--6}}} & \multicolumn{3}{c}{\textbf{\texttt{/players 7--8}}} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
+Rune & Unl. & Lck. & Weighted $w_r$ & Unl. & Lck. & Weighted $w_r$ & Unl. & Lck. & Weighted $w_r$ \\
+\midrule
+Pul (\#21) & 12 & 14 & 12.4 & 16 & 18 & 16.4 & 16 & 16 & 16.0 \\
+Um (\#22)  &  7 &  9 &  7.4 & 11 & 11 & 11.0 & 10 & 11 & 10.2 \\
+Mal (\#23) & 12 & 12 & 12.0 & 10 & 10 & 10.0 & 14 & 15 & 14.2 \\
+Ist (\#24) &  8 & 10 &  8.4 &  5 &  6 &  5.2 &  5 &  7 &  5.4 \\
+Gul (\#25) &  4 &  6 &  4.4 &  5 &  5 &  5.0 & 11 & 11 & 11.0 \\
+\midrule
+Vex (\#26) &  3 &  3 &  3.0 &  6 &  6 &  6.0 &  6 &  6 &  6.0 \\
+Ohm (\#27) &  2 &  2 &  2.0 &  2 &  2 &  2.0 &  5 &  5 &  5.0 \\
+Lo (\#28)  &  4 &  4 &  4.0 &  4 &  4 &  4.0 &  2 &  2 &  2.0 \\
+Sur (\#29) &  4 &  5 &  4.2 &  5 &  7 &  5.4 &  9 &  9 &  9.0 \\
+Ber (\#30) &  2 &  2 &  2.0 &  4 &  4 &  4.0 &  2 &  2 &  2.0 \\
+\midrule
+\textbf{Mid Runes (Pul--Gul)}   & 43 & 51 & \textbf{44.6} & 47 & 50 & \textbf{47.6} & 56 & 60 & \textbf{56.8} \\
+\textbf{High Runes (Vex--Ber)}  & 15 & 16 & \textbf{15.2} & 21 & 23 & \textbf{21.4} & 24 & 24 & \textbf{24.0} \\
+\textbf{All Runes (Pul--Ber)}   & 58 & 67 & \textbf{59.8} & 68 & 73 & \textbf{69.0} & 80 & 84 & \textbf{80.8} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Weighted Drop Probabilities, Odds, and Farm Time Reconciliations}
+\label{app:probabilities}
+
+Using the effective weighted pattern count $w_r = 0.80\,|\mathcal{H}_r^{\text{un}}| + 0.20\,|\mathcal{H}_r^{\text{lk}}|$, the per-chest probability is $p_{\text{chest}} = w_r / 65{,}534$. For a standard two-campfire map opening $m = 6$ superchests per run, the probability that a run drops at least one copy of rune $r$ is
+\begin{equation}
+    p_{\text{run}} = 1 - (1 - p_{\text{chest}})^6.
+\end{equation}
+The expected number of $6$-chest runs required to drop the rune is $\mathbb{E}[R] = 1 / p_{\text{run}}$, corresponding to an expected farm time of $\mathbb{E}[R] \times \tau_0 / 3{,}600\text{ hours}$ at pacing $\tau_0$.
+
+Table~\ref{tab:app_odds} details these probabilities, odds, and expected times across all three player settings for both brisk ($\tau_0 = 25\text{ s/run}$) and moderate ($\tau_0 = 30\text{ s/run}$) pacing.
+
+\begin{table}[htbp]
+\centering
+\caption{Weighted drop odds and expected farming hours per $6$-chest run across player settings.}
+\label{tab:app_odds}
+\footnotesize
+\setlength{\tabcolsep}{4.2pt}
+\begin{tabular}{@{}l ccc ccc ccc@{}}
+\toprule
+& \multicolumn{3}{c}{\textbf{Weighted Patterns $w_r$}} & \multicolumn{3}{c}{\textbf{6-Chest Odds ($1\text{ in }X$)}} & \multicolumn{3}{c}{\textbf{Expected Hours ($25\text{s} \,/\, 30\text{s}$)}} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
+Rune & \texttt{/p3} & \texttt{/p5} & \texttt{/p7} & \texttt{/p3} & \texttt{/p5} & \texttt{/p7} & \texttt{/p3} & \texttt{/p5} & \texttt{/p7} \\
+\midrule
+Pul (\#21) & 12.4 & 16.4 & 16.0 &  881.3 &  666.4 &  683.1 &  6.1 / 7.3 &  4.6 / 5.6 &  4.7 / 5.7 \\
+Um (\#22)  &  7.4 & 11.0 & 10.2 & 1476.4 &  993.4 & 1071.2 & 10.3 / 12.3 &  6.9 / 8.3 &  7.4 / 8.9 \\
+Mal (\#23) & 12.0 & 10.0 & 14.2 &  910.6 & 1092.7 &  769.6 &  6.3 / 7.6 &  7.6 / 9.1 &  5.3 / 6.4 \\
+Ist (\#24) &  8.4 &  5.2 &  5.4 & 1300.7 & 2100.9 & 2023.1 &  9.0 / 10.8 & 14.6 / 17.5 & 14.0 / 16.9 \\
+Gul (\#25) &  4.4 &  5.0 & 11.0 & 2482.8 & 2184.9 &  993.4 & 17.2 / 20.7 & 15.2 / 18.2 &  6.9 / 8.3 \\
+\midrule
+Vex (\#26) &  3.0 &  6.0 &  6.0 & 3641.2 & 1820.8 & 1820.8 & 25.3 / 30.3 & 12.6 / 15.2 & 12.6 / 15.2 \\
+Ohm (\#27) &  2.0 &  2.0 &  5.0 & 5461.6 & 5461.6 & 2184.9 & 37.9 / 45.5 & 37.9 / 45.5 & 15.2 / 18.2 \\
+Lo (\#28)  &  4.0 &  4.0 &  2.0 & 2731.0 & 2731.0 & 5461.6 & 19.0 / 22.8 & 19.0 / 22.8 & 37.9 / 45.5 \\
+Sur (\#29) &  4.2 &  5.4 &  9.0 & 2601.0 & 2023.1 & 1214.0 & 18.1 / 21.7 & 14.0 / 16.9 &  8.4 / 10.1 \\
+Ber (\#30) &  2.0 &  4.0 &  2.0 & 5461.6 & 2731.0 & 5461.6 & 37.9 / 45.5 & 19.0 / 22.8 & 37.9 / 45.5 \\
+\midrule
+\textbf{Mid (Pul--Gul)}  & 44.6 & 47.6 & 56.8 &  245.3 &  229.9 &  192.7 &  1.7 / 2.0 &  1.6 / 1.9 &  1.3 / 1.6 \\
+\textbf{High (Vex--Ber)} & 15.2 & 21.4 & 24.0 &  719.0 &  510.8 &  455.5 &  5.0 / 6.0 &  3.5 / 4.3 &  3.2 / 3.8 \\
+\textbf{All (Pul--Ber)}  & 59.8 & 69.0 & 80.8 &  183.1 &  158.7 &  135.6 &  1.3 / 1.5 &  1.1 / 1.3 &  0.9 / 1.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{Reconciliation with \texttt{d2runes.io}}
+On community platforms such as \texttt{d2runes.io}~\cite{thehappydev_d2runes}, the baseline benchmark for Lower Kurast rune farming on \texttt{/players~7--8} is frequently summarized as:
+\begin{quote}
+\emph{``$P(\text{getting at least one Pul+ rune}) = 0.00737$ or expected $1$ rune every $136$ runs, appr.\ $1.1$ hours.''}
+\end{quote}
+We can now verify this directly against our reverse-engineered model:
+\begin{enumerate}
+    \item Total weighted Pul--Ber patterns on \texttt{/players~7}:
+    \[
+        w_{\text{Pul--Ber}} = 16.0 + 10.2 + 14.2 + 5.4 + 11.0 + 6.0 + 5.0 + 2.0 + 9.0 + 2.0 = \mathbf{80.8}.
+    \]
+    \item Single-chest probability: $p_{\text{chest}} = 80.8 / 65{,}534 \approx 0.001232948$.
+    \item Probability of at least one Pul+ drop across $m = 6$ superchests:
+    \[
+        p_{\text{run}} = 1 - \left(1 - \frac{80.8}{65{,}534}\right)^6 = \mathbf{0.00737492\dots} \approx \mathbf{0.00737}.
+    \]
+    \item Expected runs to the first Pul+ drop:
+    \[
+        \mathbb{E}[R] = \frac{1}{p_{\text{run}}} = \frac{1}{0.00737492} \approx \mathbf{135.59\text{ runs}} \approx \mathbf{136\text{ runs}}.
+    \]
+    \item Expected time at standard $30$-second pacing:
+    \[
+        \frac{135.59 \times 30\text{ s}}{3{,}600\text{ s/hr}} = \mathbf{1.13\text{ hours}} \approx \mathbf{1.1\text{ hours}}.
+    \]
+\end{enumerate}
+Both calculations agree to the exact decimal. Note that if one instead uses the unrounded lock probability $q_{\text{lk}} = 0.19$ ($19\%$) and $q_{\text{un}} = 0.81$ ($81\%$), weighted Pul--Ber patterns become $0.81(80) + 0.19(84) = 80.76$, giving $p_{\text{run}} = 0.0073713$ and $\mathbb{E}[R] = 135.66$ runs—which likewise rounds identically to $0.00737$ and $136$ runs ($1.1$ hours).
+
+\section{Horadric Cubing Markov Chain: State Structure and Transition Matrices}
+\label{app:markov_chain}
+
+In Section~\ref{sec:cubing}, we established that because every rune upgrade from Pul (\#21) through Ber (\#30) follows a uniform $2$-to-$1$ recipe ($2 \times \text{Rune}(i) \to 1 \times \text{Rune}(i+1)$), any inventory combination of runes between $r_{\min}$ and $r^*$ is completely characterized by its integer valuation $V \in \{0, 1, \dots, W\}$ in radix-$2$ base units of $r_{\min}$, where $W = 2^K$ and $K = \text{idx}(r^*) - \text{idx}(r_{\min})$.
+
+Let $S = \{0, 1, \dots, W\}$ denote the state space of the Markov chain, where states $0, 1, \dots, W-1$ are transient (representing accumulated inventory value) and state $W$ is the absorbing goal state (representing having crafted or dropped at least one copy of $r^*$). The transition matrix $P$ has dimension $(W+1) \times (W+1)$ and can be decomposed into canonical absorbing form:
+\begin{equation}
+\label{eq:app_canonical_P}
+    P = \begin{pmatrix}
+        Q & \mathbf{a} \\
+        \mathbf{0}^T & 1
+    \end{pmatrix},
+\end{equation}
+where $Q \in \mathbb{R}^{W \times W}$ governs transitions between transient states, $\mathbf{a} \in \mathbb{R}^W$ contains the one-run absorption probabilities into goal state $W$, and $\mathbf{a} = (\mathbf{I} - Q)\mathbf{1}$.
+
+\subsection{C.1. The Full Binary Radix Lattice for Pul $\to$ Ber ($W = 512$)}
+When a player picks up all runes from Pul (\#21) through Ber (\#30), $K = 30 - 21 = 9$ binary upgrade tiers. The absorbing goal threshold is
+\[
+    W = 2^9 = 512\text{ Pul-units}.
+\]
+The state space contains $W + 1 = 513$ states ($\{0, 1, 2, \dots, 512\}$), and the transition matrix $P$ has dimension:
+\[
+    \dim(P) = 513 \times 513 \qquad \left(513^2 = 263{,}169\text{ entries}\right).
+\]
+Because a $513 \times 513$ matrix contains over a quarter-million numerical entries, it cannot be rendered cell-by-cell on a two-dimensional printed page. However, its mathematical structure is completely defined by the run-level jump distribution. 
+
+Let $\mathbf{p}_{\text{chest}} = (p_{\text{chest}}(0), p_{\text{chest}}(1), \dots)$ denote the PMF of the Pul-unit value increment dropped by a single superchest:
+\[
+    p_{\text{chest}}(v) = \begin{cases}
+        w_r / 65{,}534, & \text{if } v = 2^{\text{idx}(r) - 21} \text{ for } r \in \{\text{Pul}, \dots, \text{Ber}\}, \\
+        1 - \sum_{r=\text{Pul}}^{\text{Ber}} \frac{w_r}{65{,}534}, & \text{if } v = 0, \\
+        0, & \text{otherwise}.
+    \end{cases}
+\]
+For a standard run opening $m = 6$ independent superchests, the run increment distribution $\boldsymbol{\delta} = (\delta_0, \delta_1, \dots)$ is the $6$-fold discrete convolution:
+\begin{equation}
+    \boldsymbol{\delta} = \mathbf{p}_{\text{chest}} \ast \mathbf{p}_{\text{chest}} \ast \mathbf{p}_{\text{chest}} \ast \mathbf{p}_{\text{chest}} \ast \mathbf{p}_{\text{chest}} \ast \mathbf{p}_{\text{chest}}.
+\end{equation}
+The transient submatrix $Q \in \mathbb{R}^{512 \times 512}$ is an \textbf{upper-triangular Toeplitz matrix}:
+\begin{equation}
+    Q = \begin{pmatrix}
+        \delta_0 & \delta_1 & \delta_2 & \delta_3 & \dots & \delta_{511} \\
+        0 & \delta_0 & \delta_1 & \delta_2 & \dots & \delta_{510} \\
+        0 & 0 & \delta_0 & \delta_1 & \dots & \delta_{509} \\
+        \vdots & \vdots & \vdots & \ddots & \ddots & \vdots \\
+        0 & 0 & 0 & \dots & \delta_0 & \delta_1 \\
+        0 & 0 & 0 & \dots & 0 & \delta_0
+    \end{pmatrix},
+\end{equation}
+where $\delta_0 = (1 - 80.8/65{,}534)^6 \approx 0.9926251$ is the probability that a $6$-chest run drops zero Pul+ runes. The absorption vector $\mathbf{a} \in \mathbb{R}^{512}$ in column $512$ is:
+\begin{equation}
+    a_i = \sum_{v = 512 - i}^{\infty} \delta_v = 1 - \sum_{j=i}^{511} Q_{i,j} \qquad (0 \le i \le 511).
+\end{equation}
+Crucially, $Q$ is extremely sparse: in a $6$-chest run, $\delta_v > 0$ only for integers $v$ that can be partitioned into a sum of at most $6$ powers of $2$ from $\{1, 2, 4, 8, 16, 32, 64, 128, 256, 512\}$. For all other values, $\delta_v = 0$.
+
+\subsection{C.2. Complete Explicit Numerical Transition Matrix for Ohm $\to$ Ber ($W = 8$)}
+To inspect the complete numerical structure of the transition matrix without truncation, consider the High Rune sub-lattice from \textbf{Ohm (\#27) to Ber (\#30)}. Here, $r_{\min} = \text{Ohm}$ and $r^* = \text{Ber}$, so $K = 30 - 27 = 3$ binary steps:
+\[
+    \text{Ohm} = 1 = 2^0, \quad \text{Lo} = 2 = 2^1, \quad \text{Sur} = 4 = 2^2, \quad \text{Ber} = 8 = 2^3.
+\]
+The absorbing goal threshold is $W = 2^3 = 8$ Ohm-units ($8\text{ Ohm} = 4\text{ Lo} = 2\text{ Sur} = 1\text{ Ber}$). The state space consists of exactly $W + 1 = 9$ states:
+\[
+    S = \{0, 1, 2, 3, 4, 5, 6, 7, 8\},
+\]
+producing an exact $\mathbf{9 \times 9}$ transition matrix $P$ that can be printed in its entirety.
+
+On \texttt{/players~7}, the effective pattern counts are $\text{Ohm} = 5.0$, $\text{Lo} = 2.0$, $\text{Sur} = 9.0$, and $\text{Ber} = 2.0$ (total $18.0$ patterns per chest). The $6$-fold convolution yields the run increment probabilities $\delta_v = \mathbb{P}(\Delta V_{\text{run}} = v)$ reported in Table~\ref{tab:app_ohm_deltas}.
+
+\begin{table}[htbp]
+\centering
+\caption{Exact $6$-chest run increment probabilities $\delta_v = \mathbb{P}(\Delta V_{\text{run}} = v)$ for $\text{Ohm}\to\text{Ber}$ on \texttt{/players~7}.}
+\label{tab:app_ohm_deltas}
+\footnotesize
+\begin{tabular}{@{}c l c r@{}}
+\toprule
+Increment $v$ & Contributing Rune Combinations in 6 Chests & Exact Probability $\delta_v$ & Percentage \\
+\midrule
+$0$ & No Ohm, Lo, Sur, or Ber drop in 6 chests & $0.99835313$ & $99.8353\%$ \\
+$1$ & $+1\text{ Ohm}$ (5 patterns)              & $4.5715 \times 10^{-4}$ & $0.0457\%$ \\
+$2$ & $+1\text{ Lo}$ (2 patterns)                & $1.8295 \times 10^{-4}$ & $0.0183\%$ \\
+$3$ & $+1\text{ Ohm} + 1\text{ Lo}$             & $6.98 \times 10^{-8}$   & $< 0.0001\%$ \\
+$4$ & $+1\text{ Sur}$ (9 patterns)              & $8.2288 \times 10^{-4}$ & $0.0823\%$ \\
+$5$ & $+1\text{ Sur} + 1\text{ Ohm}$            & $3.14 \times 10^{-7}$   & $< 0.0001\%$ \\
+$6$ & $+1\text{ Sur} + 1\text{ Lo}$             & $1.26 \times 10^{-7}$   & $< 0.0001\%$ \\
+$7$ & $+1\text{ Sur} + 1\text{ Lo} + 1\text{ Ohm}$ & $3.83 \times 10^{-11}$ & $< 0.0001\%$ \\
+$\ge 8$ & Direct $+1\text{ Ber}$ (or multi-drop reaching $\ge 8$) & $1.8338 \times 10^{-4}$ & $0.0183\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:app_matrix_P} displays the complete numerical $9 \times 9$ transition matrix $P$. Each row corresponds to the current stash state $i \in \{0, \dots, 8\}$, and each column corresponds to the state $j$ after opening $6$ superchests. Entries below the diagonal are identically $0$ (a player never loses runes).
+
+\begin{table}[htbp]
+\centering
+\caption{Complete explicit $9 \times 9$ state-transition matrix $P$ for cubing $\text{Ohm}\to\text{Ber}$ on \texttt{/players~7}. Negligible multi-drop probabilities ($< 10^{-6}$) are denoted by $\epsilon$.}
+\label{tab:app_matrix_P}
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}c ccccccccc@{}}
+\toprule
+& \multicolumn{9}{c}{\textbf{Next State $j$ (Ohm-Units Accumulated)}} \\
+\cmidrule(lr){2-10}
+\textbf{State $i$} & \textbf{0} & \textbf{1} & \textbf{2} & \textbf{3} & \textbf{4} & \textbf{5} & \textbf{6} & \textbf{7} & \textbf{8 (Absorbing)} \\
+\midrule
+\textbf{0} & $0.998353$ & $0.000457$ & $0.000183$ & $\epsilon$ & $0.000823$ & $\epsilon$ & $\epsilon$ & $\epsilon$ & $0.000183$ \\
+\textbf{1} & $0$ & $0.998353$ & $0.000457$ & $0.000183$ & $\epsilon$ & $0.000823$ & $\epsilon$ & $\epsilon$ & $0.000183$ \\
+\textbf{2} & $0$ & $0$ & $0.998353$ & $0.000457$ & $0.000183$ & $\epsilon$ & $0.000823$ & $\epsilon$ & $0.000184$ \\
+\textbf{3} & $0$ & $0$ & $0$ & $0.998353$ & $0.000457$ & $0.000183$ & $\epsilon$ & $0.000823$ & $0.000184$ \\
+\textbf{4} & $0$ & $0$ & $0$ & $0$ & $0.998353$ & $0.000457$ & $0.000183$ & $\epsilon$ & $0.001007$ \\
+\textbf{5} & $0$ & $0$ & $0$ & $0$ & $0$ & $0.998353$ & $0.000457$ & $0.000183$ & $0.001007$ \\
+\textbf{6} & $0$ & $0$ & $0$ & $0$ & $0$ & $0$ & $0.998353$ & $0.000457$ & $0.001190$ \\
+\textbf{7} & $0$ & $0$ & $0$ & $0$ & $0$ & $0$ & $0$ & $0.998353$ & $0.001647$ \\
+\textbf{8} & $0$ & $0$ & $0$ & $0$ & $0$ & $0$ & $0$ & $0$ & $\mathbf{1.000000}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{Solving for Expected Runs by Back-Substitution}
+Because $Q$ is upper-triangular, the expected number of runs $\mathbf{E} = [E_0, E_1, \dots, E_7]^T$ to reach absorbing state $W=8$ satisfies the linear system $(\mathbf{I} - Q)\mathbf{E} = \mathbf{1}$. Back-substitution from state $7$ down to state $0$ yields the exact expected runs from every stash inventory:
+\begin{align*}
+    E_7 &= \frac{1}{1 - Q_{7,7}} = \frac{1}{1 - 0.998353} = \mathbf{607.2\text{ runs}} \quad (\text{holding } 1\text{ Sur} + 1\text{ Lo} + 1\text{ Ohm}), \\
+    E_6 &= \frac{1 + Q_{6,7} E_7}{1 - Q_{6,6}} = \frac{1 + 0.000457(607.2)}{1 - 0.998353} = \mathbf{775.8\text{ runs}} \quad (\text{holding } 1\text{ Sur} + 1\text{ Lo}), \\
+    E_5 &= \frac{1 + Q_{5,6} E_6 + Q_{5,7} E_7}{1 - Q_{5,5}} = \mathbf{890.0\text{ runs}} \quad (\text{holding } 1\text{ Sur} + 1\text{ Ohm}), \\
+    E_4 &= \mathbf{940.5\text{ runs}} \quad (\text{holding } 1\text{ Sur}), \\
+    E_3 &= \mathbf{1{,}270.6\text{ runs}} \quad (\text{holding } 1\text{ Lo} + 1\text{ Ohm}), \\
+    E_2 &= \mathbf{1{,}452.2\text{ runs}} \quad (\text{holding } 1\text{ Lo} \text{ or } 2\text{ Ohm}), \\
+    E_1 &= \mathbf{1{,}596.4\text{ runs}} \quad (\text{holding } 1\text{ Ohm}), \\
+    E_0 &= \mathbf{1{,}681.9\text{ runs}} \quad (\text{empty stash}).
+\end{align*}
+Notice that starting from an empty stash ($E_0 = 1{,}681.9$ runs), acquiring a single Sur rune immediately jumps the player forward by $4$ Ohm-units into State~$4$ ($E_4 = 940.5$ runs), slashing the remaining expected wait by $741.4$ runs ($44.1\%$). When lower mid-runes (Gul, Ist, Mal, Um, Pul) are also picked up, the Markov board expands from $8$ to $512$ squares, reducing the expected wait from $1{,}681.9$ down to $\mathbf{1{,}558.0\text{ runs}}$ (Table~\ref{tab:cubing}).
+
+\FloatBarrier
+
+\begin{thebibliography}{99}
 
 \bibitem{deadsett2024}
 Dead\_Sett, \emph{Watch this BEFORE you run Lower Kurast}, YouTube, 2024.
