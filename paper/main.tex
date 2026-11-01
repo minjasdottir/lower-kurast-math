@@ -1,0 +1,689 @@
+\documentclass[11pt,reqno]{amsart}
+
+\usepackage[margin=1.1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{hyperref}
+\usepackage{microtype}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!60!black,
+    citecolor=blue!60!black,
+    urlcolor=blue!60!black
+}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+
+\title[Mathematics and Psychology of High Rune Farming in D2R]{Stop ``Doing Random Shit'' in Lower Kurast: Keeping Your Superstition at Bay}
+\author{Sister~Eir}
+\date{\today}
+
+\begin{document}
+
+\begin{abstract}
+In unseeded single-player \emph{Diablo~II: Resurrected}, repeatedly opening the six ``superchests'' in Lower Kurast (LK) on \texttt{/players~7} is the best way to farm High Runes (Vex through Ber) for early progression and endgame runewords on a Holy Grail run. Due to the sheer length and right-skewed variance of the grind, players frequently adopt superstitious rituals (such as kicking logs or varying movement paths to ``un-stick'' the random number generator) or ineffective collateral-looting strategies to cope psychologically, which actively delays their desired payoff. Section~2 provides concrete, optimal farming guidance, giving exact expected run counts to cube up to every High Rune and major runeword (\emph{Heart of the Oak}, \emph{Call to Arms}, \emph{Grief}, \emph{Infinity}, and \emph{Enigma}). Sections~3--7 detail all the math, showing why superstition, collateral farming, and \texttt{/players~5} harm players, and explaining how exact expected run counts are calculated using absorbing Markov chains.
+\end{abstract}
+
+\maketitle
+
+\section{Introduction}
+
+In single-player \emph{Diablo~II}, Lower Kurast is the undisputed best place for \textbf{early-progression} High Rune farming. Because popping chests requires no kill speed—needing only a $63\%$ or $105\%$ Faster Cast Rate \emph{Teleport} Sorceress and zero endgame gear—a fresh solo self-found (SSF) or Holy Grail account can immediately farm Lower Kurast to bootstrap foundational runewords such as \emph{Heart of the Oak} (Vex), \emph{Call to Arms} (Ohm), \emph{Grief} and \emph{Fortitude} (Lo), \emph{Infinity} ($2\text{ Ber}$), and \emph{Enigma} ($\text{Jah} + \text{Ber}$). At the same time, Hell Lower Kurast superchests are governed by the \texttt{Act 3 (H) SuperCx} treasure class, which caps at \texttt{Runes 15} (\textbf{Ber, \#30}) and \textbf{cannot drop Jah (\#31), Cham (\#32), or Zod (\#33)} directly.
+
+Once a single-player account has unlocked its core progression runewords in Lower Kurast, \textbf{endgame-progression} continues with hunting direct \textbf{Jah, Cham, and Zod} drops, and \texttt{tc87} set and unique items. While beyond our scope here, accepted strategies center around either \textbf{density farming} (killing monsters in high density areas), or \textbf{special monster} farming (such as ghost-type monsters or the Travincal Council members). In density farming, players favor clearing the Secret Cow Level (e.g., with a \emph{Lightning Fury} Javazon), the Chaos Sanctuary, or the Worldstone Keep, particularly when ``terrorized.'' In special monster farming, the Travincal Council drops runes at an unusually high rate, and with a \emph{Find Item} (``Horker'') Barbarian, the player can nearly double their drops, allowing quick runs on \texttt{/players~1} without being subject to no-drop on the horking step. Ghost-type monsters such as finger mages, ghosts, or gloams cannot drop equipment (weapons and armor), making them more likely to drop runes. They spawn with significant density in the Arcane Sanctuary as well as in the Chaos Sanctuary.
+
+Few probabilistic grinding mechanics in action role-playing games have been scrutinized as closely as the ``superchests'' of Lower Kurast (LK) in Act~III of \emph{Diablo~II: Lord of Destruction} (patch 1.13c+) and \emph{Diablo~II: Resurrected} (D2R). In single-player mode, where map layouts persist across sessions unless the character switches difficulty, an optimal Lower Kurast map spawns two campfires near the waypoint, each flanked by two huts containing a total of three special chests—yielding $m = 6$ superchests per run. Because the chest object seed generation algorithm truncates its internal state consumption to a $16$-bit space of $N_{\text{pat}} = 2^{16} - 2 = 65{,}534$ distinct patterns (excluding the two boundary seed values $\mathtt{0x0000}$ and $\mathtt{0xFFFF}$), the exact combinatorial frequency of every High Rune (HR) pattern can be enumerated directly from the game's treasure class execution logic.
+
+Nevertheless, a persistent gap separates the exact discrete mathematics of superchests from player intuition regarding stochastic processes. A striking example appears in recent community discourse. In the video \emph{``Watch this BEFORE you run Lower Kurast''}~\cite{deadsett2024}, content creator \texttt{Dead\_Sett} documents a brutal opening dry spell of $2{,}000$ runs finding nothing higher than a Gul rune, with his first High Rune (a Vex) finally dropping on run $2{,}461$. Misinterpreting a demonstration by \texttt{Ginger Gaming Mentor}~\cite{ggm2023} (\emph{``D2R It's Raining Ber Runes''})—which showed that artificially fixing the game's initial random number seed produces repeatable chest drops if the player executes identical frame-perfect actions—\texttt{Dead\_Sett} conflates fixed-seed determinism with standard unseeded single-player play:
+\begin{quote}
+\emph{``As I prepared to go again, the key takeaway from GGM's video was that Lower Kurast on single player can have deterministic drops if things are done the same way sequentially. This is tied to seed! And being the clown that I am, I continued to find the same runes over and over again because my pathing was so precise. The high level? JUST DO RANDOM SHIT AND SEE WHAT HAPPENS.''}
+\end{quote}
+Alarmed that he had found three Gul runes during his drought and later lamenting (\emph{``At run $2{,}842$, I pick up yet another Lem rune. This is far too frequent for coincidence, I'm really concerned that something's wrong''}), \texttt{Dead\_Sett} adopts the superstitious routine of kicking logs, flipping corpses, and varying his movement path. Over the remainder of his $4{,}554$-run sample, he experiences a dramatic reversal of fortune—dropping a Lo on run $3{,}153$, a \emph{second} Lo just $23$ runs later on run $3{,}176$, a Sur on run $3{,}494$, back-to-back Sur runes $23$ runs apart on runs $4{,}390$ and $4{,}413$, and a Ber on run $4{,}554$—cementing his conviction that ``doing random shit'' unlocked the PRNG.
+
+\section{What Actually Matters in Lower Kurast}
+\label{sec:bluf}
+
+For a single-player runner grinding toward \emph{Heart of the Oak} (Vex), \emph{Call to Arms} (Ohm), \emph{Grief} / \emph{Fortitude} (Lo), \emph{Infinity} ($2\text{ Ber}$), or \emph{Enigma} ($\text{Jah} + \text{Ber} = 3\text{ Ber}$ equivalents when cubed in Lower Kurast), there is no secret ritual that improves superchest luck. Every actionable result in this paper boils down to four practical truths:
+
+\subsection{How Long It Will Take to Cube Up to Target Runes and Runewords}
+\label{subsec:bluf_runs}
+
+Every rune from Pul (\#21) through Ber (\#30) upgrades in the Horadric Cube via a uniform $2$-to-$1$ rule ($2\text{ Pul} \to 1\text{ Um}$, \dots, $2\text{ Sur} \to 1\text{ Ber}$). Table~\ref{tab:cubing} reports the \textbf{exact expected number of $6$-chest Lower Kurast runs} (and standard deviation) required to acquire each High Rune and major endgame runeword when picking up and cubing lower runes, derived via our absorbing Markov chain in Section~\ref{sec:cubing}. At a brisk, sustainable single-player pace of $\tau_0 = 25\text{ seconds per run}$ ($\approx 144\text{ runs/hour}$), farming on \texttt{/players~7} while cubing Pul+ requires an average of:
+\begin{itemize}
+    \item \textbf{Vex (headliner for \emph{Heart of the Oak}):} $\mathbf{861.7\text{ runs}}$ ($\approx \mathbf{6.0\text{ hours}}$; $692.9$ runs on naive spreadsheets; $+35.8\text{ runs}$ to $897.5$ in Pul-unit value when including the Pul rune required by \emph{HOTO}).
+    \item \textbf{Ohm (headliner for \emph{Call to Arms}):} $\mathbf{1{,}057.8\text{ runs}}$ ($\approx \mathbf{7.3\text{ hours}}$; $847.9$ runs on naive spreadsheets; $+183.1\text{ runs}$ to $1{,}240.9$ in Pul-unit value when including the Mal $+$ Ist required by \emph{CTA}).
+    \item \textbf{Sur ($1/2\text{ Ber}$):} $\mathbf{1{,}037.4\text{ runs}}$ ($\approx \mathbf{7.2\text{ hours}}$; $826.2$ runs on naive spreadsheets).
+    \item \textbf{Lo (headliner for \emph{Grief} / \emph{Fortitude}):} $\mathbf{1{,}569.9\text{ runs}}$ ($\approx \mathbf{10.9\text{ hours}}$; $1{,}294.0$ runs on naive spreadsheets; $+46.2\text{ runs}$ to $1{,}616.1$ in Pul-unit value when including the Mal required by \emph{Grief}).
+    \item \textbf{Ber ($1\times$):} $\mathbf{1{,}558.0\text{ runs}}$ ($\approx \mathbf{10.8\text{ hours}}$; $1{,}268.5$ runs on naive spreadsheets).
+    \item \textbf{\emph{Infinity} ($2\text{ Ber}$):} $\mathbf{2{,}865.3\text{ runs}}$ ($\approx \mathbf{19.9\text{ hours}}$; $2{,}537.1$ runs on naive spreadsheets; $+28.8\text{ runs}$ to $2{,}894.1$ in Pul-unit value when including Mal $+$ Ist).
+    \item \textbf{\emph{Enigma} ($3\text{ Ber}$):} $\mathbf{4{,}136.4\text{ runs}}$ ($\approx \mathbf{28.7\text{ hours}}$; $3{,}805.6$ runs on naive spreadsheets).
+\end{itemize}
+\noindent\emph{A note on full runeword recipes and downward cubing:} Because runes cannot be cubed downward in \emph{Diablo~II}, a player who drops an early natural Ohm (or Vex $+$ $2\text{ Gul}$) before finding the supporting Mal $+$ Ist for \emph{Call to Arms} cannot break that Ohm downward; if farmed strictly from Pul--Ist drops in Lower Kurast without visiting the Hell Countess, waiting for the dedicated Mal $+$ Ist slots increases the exact multi-slot expectation for \emph{Call to Arms} to $1{,}521.2\text{ runs}$ (and $1{,}670.3\text{ runs}$ for \emph{Grief}'s Lo $+$ Mal). By contrast, over a $2{,}865$-run \emph{Infinity} grind, leftover Pul--Ist runes from boundary overshoot almost always cover the Mal $+$ Ist slots automatically ($+1\%$).
+Notice the rightmost column of Table~\ref{tab:cubing}: \textbf{standard community spreadsheets underestimate single-rune grinds by $21\%$ to $26\%$} ($275$ to $290$ missing runs on Lo and Ber!). As we prove in Section~\ref{subsec:overshoot}, naive spreadsheets divide $1.0$ target rune by the average fractional rune value dropped per run—implicitly assuming you never have any ``leftover change'' sitting in your stash when your final rune drops. In reality, whenever you already hold $\frac{7}{8}$ of a Lo rune in cubed Ohms/Vexes/Guls and a natural Lo drops from a chest, those partial runes in your stash contributed nothing to finishing that first Lo (though they roll over as a head start toward your \emph{next} runeword, which is why the overshoot penalty shrinks from $+22.8\%$ on a single Ber to $+12.9\%$ on \emph{Infinity} and $+8.7\%$ on \emph{Enigma}).
+
+\begin{table}[htbp]
+\centering
+\caption{Exact expected $6$-chest Lower Kurast runs $\mathbb{E}[R]$ (and standard deviation $\text{SD}(R)$) to acquire a target rune or endgame runeword via direct drops vs.\ Horadric Cubing, alongside the naive linear-drift approximation $W/\mathbb{E}[\Delta V_{\text{run}}]$.}
+\label{tab:cubing}
+\scriptsize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}lcccccccc@{}}
+\toprule
+& \multicolumn{3}{c}{\textbf{\texttt{/players 5}}} & & \multicolumn{4}{c}{\textbf{\texttt{/players 7}}} \\
+\cmidrule(lr){2-4} \cmidrule(lr){6-9}
+Target Goal $r^*$ & Direct & Cube Gul+ & Cube Pul+ ($\text{SD}$) & & Direct & Cube Gul+ & Cube Pul+ ($\text{SD}$) & Naive Drift (Overshoot) \\
+\midrule
+Mal (\#23) & $1{,}092.7$ & --- & $662.5$ ($519.6$) & & $769.6$ & --- & $\mathbf{559.4}$ ($464.8$) & $468.8$ ($+19.3\%$) \\
+Ist (\#24) & $2{,}100.9$ & --- & $876.5$ ($604.7$) & & $2{,}023.1$ & --- & $\mathbf{768.2}$ ($535.4$) & $640.6$ ($+19.9\%$) \\
+Gul (\#25) & $2{,}184.9$ & $2{,}184.9$ & $1{,}076.4$ ($730.3$) & & $993.4$ & $993.4$ & $\mathbf{699.0}$ ($542.7$) & $559.4$ ($+25.0\%$) \\
+\midrule
+Vex (\#26) & $1{,}820.8$ & $1{,}444.7$ & $1{,}121.4$ ($818.5$) & & $1{,}820.8$ & $1{,}058.6$ & $\mathbf{861.7}$ ($606.0$) & $692.9$ ($+24.4\%$) \\
+Ohm (\#27) & $5{,}461.6$ & $2{,}021.9$ & $1{,}641.1$ ($1{,}016.6$) & & $2{,}184.9$ & $1{,}202.1$ & $\mathbf{1{,}057.8}$ ($717.6$) & $847.9$ ($+24.8\%$) \\
+Lo (\#28)  & $2{,}731.0$ & $1{,}885.9$ & $1{,}714.2$ ($1{,}223.2$) & & $5{,}461.6$ & $1{,}753.0$ & $\mathbf{1{,}569.9}$ ($928.9$) & $1{,}294.0$ ($+21.3\%$) \\
+Sur (\#29) & $2{,}023.1$ & $1{,}511.0$ & $1{,}464.4$ ($1{,}164.1$) & & $1{,}214.0$ & $1{,}060.3$ & $\mathbf{1{,}037.4}$ ($877.8$) & $826.2$ ($+25.6\%$) \\
+Ber (\#30) & $2{,}731.0$ & $1{,}603.3$ & $1{,}576.9$ ($1{,}183.9$) & & $5{,}461.6$ & $1{,}591.9$ & $\mathbf{1{,}558.0}$ ($1{,}035.0$) & $1{,}268.5$ ($+22.8\%$) \\
+\midrule
+\emph{Infinity} ($2\text{ Ber}$) & --- & $2{,}949.5$ & $2{,}898.5$ ($1{,}534.5$) & & --- & $2{,}930.1$ & $\mathbf{2{,}865.3}$ ($1{,}359.3$) & $2{,}537.1$ ($+12.9\%$) \\
+\emph{Enigma} ($3\text{ Ber}$) & --- & $4{,}239.0$ & $4{,}164.4$ ($1{,}825.0$) & & --- & $4{,}231.0$ & $\mathbf{4{,}136.4}$ ($1{,}632.7$) & $3{,}805.6$ ($+8.7\%$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Why Collateral Looting Delays the Payoff (And Why Your Loot Filter Is Your \#1 High Rune Generator)}
+
+Because Lower Kurast requires thousands of runs, players are frequently seduced by the \textbf{collateral-loot fallacy}: \emph{``Since I'm opening all these chests anyway, I should pick up and cube every Flawless Gem, identify every Small and Grand Charm, and hoard low runes and crafting Jewels along the way.''}
+
+The flaw in this reasoning is that inventory management is not free. If your base run takes $\tau_0 = 25\text{ s}$, picking up an average of $2.5$ collateral items per run at an amortized cost of $4\text{ s}$ per item (walking back into huts to click clutter, identifying charms, Tetrising inventory space, walking to the stash, and cubing sets of three Flawless Gems) adds $\Delta\tau_{\text{loot}} = 10\text{ s}$ per run ($\tau_1 = 35\text{ s}$). That single habit \textbf{slashes your High Rune arrival rate by $28.6\%$}, adding more than \textbf{$8\text{ hours}$ of pure inventory chore time} to an \emph{Enigma} grind—the equivalent of throwing away $1{,}200$ Lower Kurast runs ($\approx 2.63$ expected High Runes).
+
+Conversely, the single highest-leverage ``High Rune generator'' in \emph{Diablo~II: Resurrected} is a \textbf{strict loot filter} (hiding gold, potions, equipment, gems, and every rune below Lem or Pul). Beyond eliminating click and stash-management time, a strict loot filter removes the visual parsing tax and psychological whiplash of scanning twenty white and orange labels in a hut and mistaking an \emph{Ith} for an \emph{Ist}, a \emph{Sol} for a \emph{Sur}, or an \emph{Io} for a \emph{Lo}—and it prevents high runes from being hidden off-screen when a \texttt{/players~7} chest eruption exceeds \emph{Diablo~II}'s $32$-item ground label display cap. When trash is hidden, $99\%$ of chest pops require zero cognitive effort, allowing you to cruise on effortless autopilot until a genuine mid-to-high rune flashes on screen (Section~\ref{subsec:collateral}).
+
+\subsection{Why Kicking Logs and Flipping Corpses Delays the Payoff}
+
+In standard (unseeded) single-player play, each new game session initializes its random number generator from unknown system clock entropy. Think of the $65{,}534$ possible superchest drop patterns as a \textbf{freshly shuffled deck of $65{,}534$ cards sitting face-down in the dark}. Kicking a log, flipping a corpse, or taking a different teleport route before opening a chest simply cuts $K$ cards off the top of that face-down deck. Because you cannot see the cards, cutting an unknown shuffled deck leaves the probability that the next card dealt is a High Rune \textbf{100\% unchanged} (Proposition~\ref{prop:shift}).
+
+Why, then, did \texttt{Dead\_Sett} feel that ``doing random shit'' after a $2{,}000$-run drought cured his bad luck?
+\begin{enumerate}
+    \item \textbf{Droughts of $2{,}000+$ runs are normal career variance, not a ``stuck seed'':} On \texttt{/players~7}, the probability of finding at least one Vex--Ber High Rune in a $6$-chest run is $1$ in $455.5$ runs. Across a $15$-High-Rune farming career, \textbf{$1$ in $6$ players ($17.0\%$)} will suffer a dry spell of $2{,}000+$ consecutive barren runs, and \textbf{$1$ in $15$ ($6.5\%$)} will suffer a $2{,}460+$ run drought (Section~\ref{subsec:dryspells}).
+    \item \textbf{Memoryless regression to the mean:} Because the PRNG has no memory, the expected number of \emph{additional} runs required to drop a High Rune after $2{,}000$ failures is still $455.5$ runs—and \texttt{Dead\_Sett} dropped his Vex $461$ runs after switching routines (run $2{,}461$), followed by two textbook Poisson clusters (Section~\ref{subsec:deadsett}). Kicking logs did not unlock his loot table; it merely slowed down each run by $\Delta\tau$ seconds while regression to the mean did its job.
+\end{enumerate}
+
+\subsection{Why There Is Never a Case for \texttt{/players~5}}
+
+A persistent myth claims that players hunting a \textbf{Lo rune} (for \emph{Grief} or \emph{Fortitude}) should farm on \texttt{/players~5} instead of \texttt{/players~7} because \texttt{/players~5} has $4$ direct Lo patterns per chest compared to $2$ on \texttt{/players~7}.
+
+As shown in Table~\ref{tab:cubing}, that advice only holds if you refuse to use the Horadric Cube. In reality, more than $76\%$ of your progress toward a Lo rune comes from cubing Ohm, Vex, and Gul drops—and \texttt{/players~7} has $\mathbf{2.5\times}$ as many Ohm patterns ($5$ vs.\ $2$) and $\mathbf{2.2\times}$ as many Gul patterns ($11$ vs.\ $5$) as \texttt{/players~5}. Once cubing is included, \textbf{\texttt{/players~7} beats \texttt{/players~5} for acquiring a Lo rune on every metric}: lower expected runs ($1{,}569.9$ vs.\ $1{,}714.2$), lower median wait ($1{,}461$ vs.\ $1{,}519$), and a vastly safer $90$th-percentile worst-case drought ($2{,}820$ vs.\ $3{,}401$ runs)—while simultaneously dropping $66.7\%$ more Sur runes toward your future \emph{Infinity} or \emph{Enigma} (Section~\ref{sec:p5myth}).
+
+Crucially, this dominance is not limited to the Lo rune: \textbf{\texttt{/players~7} strictly dominates \texttt{/players~5} to find or cube up to every single rune from Mal (\#23) through Ber (\#30)}. As detailed in Table~\ref{tab:cubing} and Section~\ref{subsec:mal_ber_dominance}, cubing from Pul+ requires $559.4$ vs.\ $662.5$ runs for Mal ($15.6\%$ faster), $768.2$ vs.\ $876.5$ runs for Ist ($12.4\%$ faster), and $699.0$ vs.\ $1{,}076.4$ runs for Gul ($35.1\%$ faster). While \texttt{/players~5} yields a microscopic edge on isolated Pul ($666.4$ vs.\ $683.1$ runs) and Um ($637.6$ vs.\ $671.9$ runs), no informed player targets Pul or Um in Lower Kurast: the Hell Countess drops a direct Pul or Um at $\sim 1\text{ in }78$ runs (or $1\text{ Pul-equivalent}$ every $\sim 14$ runs via her dedicated mid-rune table, vs.\ $\sim 670$ runs in LK). Dropping to \texttt{/players~5} for a trivial $34$-run ($5\%$) edge on an Um needlessly forfeits the massive $+42\%$ Mal, $+120\%$ Gul, $+150\%$ Ohm, $+67\%$ Sur, and $+12.1\%$ overall High Rune bonuses of \texttt{/players~7}.
+
+\medskip
+\noindent\emph{With these four practical takeaways established, the remainder of the paper presents the formal mathematical models and proofs.}
+
+\section{PRNG Architecture and Shift Invariance}
+\label{sec:prng}
+
+In \emph{Diablo~II}, pseudo-random number generation is governed by a 64-bit state split into two 32-bit unsigned integers, $(s_n, c_n) \in \{0, 1, \dots, 2^{32}-1\}^2$, representing the current value and carry of a multiply-with-carry (MWC) / linear congruential generator (LCG) recurrence:
+\begin{equation}
+\label{eq:mwc}
+    z_{n+1} = a s_n + c_n, \qquad s_{n+1} = z_{n+1} \bmod 2^{32}, \qquad c_{n+1} = \left\lfloor \frac{z_{n+1}}{2^{32}} \right\rfloor,
+\end{equation}
+where $a = \text{\texttt{0x6AC690C5}} = 1{,}791{,}398{,}085$. Crucially, the generator is \emph{unweighted} and \emph{stateless with respect to item outcomes}: the transition map $T\colon \Omega \to \Omega$ on the state space $\Omega$ depends exclusively on the current internal state $\omega_n = (s_n, c_n)$ and never on what runes or items have dropped in prior games, nor on player ``behavioral variety.''
+
+When a superchest is opened in patch 1.13c+ and D2R, the chest's internal seed initialization truncates the object seed to 16 bits, restricting the reachable drop sequences for a given chest state (unlocked or locked) to a finite set of patterns $\mathcal{P}$ with cardinality $|\mathcal{P}| = N_{\text{pat}} = 65{,}534$. Let $\mathcal{H} \subset \mathcal{P}$ denote the subset of patterns containing a High Rune (Vex--Ber).
+
+In standard (unseeded) play, each time the player clicks ``Save and Exit'' and creates a new game in Lower Kurast, the initial game state $\omega_0 \in \Omega$ is initialized from high-resolution system clock/entropy sources unknown to the player. Thus, prior to opening a chest, the state $\omega_0$ is modeled as a uniform random variable on $\Omega$.
+
+Suppose a player performs a set of extraneous actions (e.g., kicking logs, flipping corpses, or casting spells) before opening a superchest. Each such action invokes the PRNG transition map $T$ some number of times, advancing the generator by $K \ge 0$ total steps to $\omega_K = T^K(\omega_0)$ before the chest pattern map $\pi\colon \Omega \to \mathcal{P}$ is evaluated.
+
+\begin{proposition}[Shift Invariance Under Extraneous PRNG Calls]
+\label{prop:shift}
+Let $(\Omega, \mathbb{P})$ be a finite probability space equipped with the uniform probability measure $\mathbb{P}(\{\omega\}) = |\Omega|^{-1}$, and let $T\colon \Omega \to \Omega$ be the bijection induced by the PRNG state transition \eqref{eq:mwc} on its periodic cycle. For any deterministic or random integer-valued number of extraneous PRNG invocations $K \ge 0$ independent of $\omega_0$, the induced distribution of the chest pattern $\pi(T^K(\omega_0))$ is identical to that of $\pi(\omega_0)$:
+\begin{equation}
+    \mathbb{P}\!\left(\pi(T^K(\omega_0)) \in \mathcal{H}\right) = \mathbb{P}\!\left(\pi(\omega_0) \in \mathcal{H}\right) = \frac{|\mathcal{H}|}{N_{\text{pat}}}.
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Since $T$ is a bijection on the finite cycle $\Omega$, so is the $k$-fold composition $T^k$ for every fixed integer $k \ge 0$. Because $\omega_0$ is uniformly distributed on $\Omega$, for any subset $A \subseteq \Omega$ and any fixed $k \ge 0$,
+\[
+    \mathbb{P}\!\left(T^k(\omega_0) \in A\right) = \mathbb{P}\!\left(\omega_0 \in T^{-k}(A)\right) = \frac{|T^{-k}(A)|}{|\Omega|} = \frac{|A|}{|\Omega|} = \mathbb{P}(\omega_0 \in A).
+\]
+Setting $A = \pi^{-1}(\mathcal{H})$ and conditioning on $K = k$ via the law of total probability yields
+\begin{align*}
+    \mathbb{P}\!\left(\pi(T^K(\omega_0)) \in \mathcal{H}\right)
+    &= \sum_{k=0}^{\infty} \mathbb{P}\!\left(T^k(\omega_0) \in \pi^{-1}(\mathcal{H})\right)\mathbb{P}(K = k) \\
+    &= \mathbb{P}\!\left(\omega_0 \in \pi^{-1}(\mathcal{H})\right)\sum_{k=0}^{\infty}\mathbb{P}(K = k) = \frac{|\mathcal{H}|}{N_{\text{pat}}}. \qedhere
+\end{align*}
+\end{proof}
+
+\begin{remark}
+Proposition~\ref{prop:shift} formalizes the classic casino fallacy of switching slot machines or altering button-press timing on an unseeded PRNG: applying an offset $K$ to a uniformly distributed unknown state simply permutes which initial states map to $\mathcal{H}$ without altering the measure of the preimage. Because the player has zero information about $\omega_0$, $K$ is statistically independent of $\omega_0$, and ``doing random things'' cannot increase the probability of rolling a High Rune. Note two standard idealizations in this model: (i) treating $\omega_0$ as uniform on the periodic cycle $\Omega$ idealizes unseeded session initialization from system entropy, and (ii) writing $\mathbb{P}(\pi(\omega_0) \in \mathcal{H}) = |\mathcal{H}| / N_{\text{pat}}$ assumes the $16$-bit chest projection $\pi\colon \Omega \to \mathcal{P}$ has uniform fiber sizes across the $N_{\text{pat}} = 65{,}534$ patterns (which holds up to a negligible $O(N_{\text{pat}}/|\Omega|) \approx 10^{-14}$ truncation remainder, whereas the first equality $\mathbb{P}(\pi(T^K(\omega_0)) \in \mathcal{H}) = \mathbb{P}(\pi(\omega_0) \in \mathcal{H})$ holds for any projection $\pi$).
+\end{remark}
+
+\section{Exact Chest Mechanics, Pattern Tables, and Dry Spell Probabilities}
+\label{sec:model}
+
+\subsection{Grounding in Actual Game Behavior: Locked vs.\ Unlocked Superchests}
+
+A subtle methodological flaw pervades many early Lower Kurast guides. Historically, pattern tables on community forums were assembled via crowdsourced player screenshots. Because a Lower Kurast superchest can spawn in either an \textbf{unlocked} or \textbf{locked} state, and because a locked chest alters the chest's internal PRNG branching and drop-generation sequence when opened with a key (or by an Assassin, who opens locked chests natively without keys as an innate class trait), early manual tables inadvertently conflated or double-counted locked and unlocked variations—most notoriously inflating \texttt{/players~7} counts to $11$ Sur patterns and $3$ Ber patterns ($27$ total Vex--Ber patterns).
+
+Later, reverse-engineering of the actual \emph{Diablo~II} chest generation code by \texttt{Fruit}~\cite{fruit_d2pg} (\texttt{bonqen}, creator of the \emph{Diablo~II Pattern Generator}, \texttt{d2pg}) and archival verification by \texttt{fearedbliss}~\cite{fearedbliss_lk} established the exact deterministic pattern counts for both chest states across all player settings:
+\begin{itemize}
+    \item Each superchest spawns \textbf{unlocked} with probability $q_{\text{un}} = 0.80$ ($80\%$) and \textbf{locked} with probability $q_{\text{lk}} = 0.20$ ($20\%$).\footnote{In \texttt{levels.txt}, the chest lock probability is determined by the area's base monster level (\texttt{monlvl1} $= 22$ in Normal Lower Kurast) via $\lfloor\texttt{monlvl1}/2\rfloor + 8 = 19\%$ to $20\%$, as originally documented in the classic data file reference guides by \texttt{Nefarius}~\cite{nefarius_levels}. Notably, even though Hell Lower Kurast is an \texttt{alvl~80} zone (\texttt{MonLvl3Ex} $= 80$), a classic vanilla \emph{Diablo~II} engine quirk causes the chest lock initialization routine to unconditionally read the Normal difficulty column (\texttt{monlvl1} $= 22$) regardless of difficulty—otherwise Hell LK chests would spawn locked $\lfloor 80/2 \rfloor + 8 = 48\%$ of the time! Standard community reference tables derived from \texttt{d2pg} (such as \texttt{d2runes.io} by \texttt{TheHappyDev}~\cite{thehappydev_d2runes}) weight unlocked and locked pattern counts by $(q_{\text{un}}, q_{\text{lk}}) = (0.80, 0.20)$, which produces the exact single-decimal weighted counts $w_r = 0.80\,|\mathcal{H}_r^{\text{un}}| + 0.20\,|\mathcal{H}_r^{\text{lk}}|$ reported in Table~\ref{tab:patterns}. Using $0.81/0.19$ shifts expected run counts by less than $0.08\%$.}
+    \item Assuming the player carries keys (or plays an Assassin) so that locked superchests are never skipped, the effective pattern count for rune $r$ on a given player setting is the expectation over the chest's lock state:
+    \begin{equation}
+    \label{eq:weighted_pat}
+        w_r = q_{\text{un}}\,|\mathcal{H}_r^{\text{un}}| + q_{\text{lk}}\,|\mathcal{H}_r^{\text{lk}}| = 0.80\,|\mathcal{H}_r^{\text{un}}| + 0.20\,|\mathcal{H}_r^{\text{lk}}|.
+    \end{equation}
+\end{itemize}
+
+Table~\ref{tab:patterns} presents the complete reverse-engineered pattern counts from Pul (\#21) through Ber (\#30) for both \texttt{/players~5} and \texttt{/players~7}.\footnote{While \texttt{/players~8} shares the exact same treasure class no-drop divisor and superchest pattern table as \texttt{/players~7} (since no-drop only updates on odd player settings $1, 3, 5, 7$), running \texttt{/players~8} is strictly suboptimal because monster HP and attack damage scale upward on \texttt{/players~8}—an unnecessary hazard when blindly teleporting into a Cursed, Might-enchanted pack of Hell Buzzards inside a campfire hut.}
+
+\begin{table}[htbp]
+\centering
+\caption{Exact Lower Kurast superchest rune pattern counts (out of $N_{\text{pat}} = 65{,}534$) separated by chest state (Unlocked $80\%$, Locked $20\%$), following \texttt{Fruit}'s \texttt{d2pg}~\cite{fruit_d2pg} (verified by \texttt{fearedbliss}~\cite{fearedbliss_lk} and tabulated by \texttt{TheHappyDev}~\cite{thehappydev_d2runes}).}
+\label{tab:patterns}
+\footnotesize
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{@{}lccccccccc@{}}
+\toprule
+& \multicolumn{4}{c}{\textbf{\texttt{/players 5} (and \texttt{/players 6})}} & & \multicolumn{4}{c}{\textbf{\texttt{/players 7} (and \texttt{/players 8})}} \\
+\cmidrule(lr){2-5} \cmidrule(lr){7-10}
+Rune & Unl.\ & Lck.\ & Weighted $w_r$ & $6$-Chest Run Odds & & Unl.\ & Lck.\ & Weighted $w_r$ & $6$-Chest Run Odds \\
+\midrule
+Pul (\#21) & $16$ & $18$ & $16.4$ & $1\text{ in }666.4$   & & $16$ & $16$ & $16.0$ & $1\text{ in }683.1$ \\
+Um (\#22)  & $11$ & $11$ & $11.0$ & $1\text{ in }993.4$   & & $10$ & $11$ & $10.2$ & $1\text{ in }1{,}071.2$ \\
+Mal (\#23) & $10$ & $10$ & $10.0$ & $1\text{ in }1{,}092.7$ & & $14$ & $15$ & $14.2$ & $1\text{ in }769.6$ \\
+Ist (\#24) & $5$  & $6$  & $5.2$  & $1\text{ in }2{,}100.9$ & & $5$  & $7$  & $5.4$  & $1\text{ in }2{,}023.1$ \\
+Gul (\#25) & $5$  & $5$  & $5.0$  & $1\text{ in }2{,}184.9$ & & $11$ & $11$ & $11.0$ & $1\text{ in }993.4$ \\
+\midrule
+Vex (\#26) & $6$  & $6$  & $6.0$  & $1\text{ in }1{,}820.8$ & & $6$  & $6$  & $6.0$  & $1\text{ in }1{,}820.8$ \\
+Ohm (\#27) & $2$  & $2$  & $2.0$  & $1\text{ in }5{,}461.6$ & & $5$  & $5$  & $5.0$  & $1\text{ in }2{,}184.9$ \\
+Lo (\#28)  & $4$  & $4$  & $4.0$  & $1\text{ in }2{,}731.0$ & & $2$  & $2$  & $2.0$  & $1\text{ in }5{,}461.6$ \\
+Sur (\#29) & $5$  & $7$  & $5.4$  & $1\text{ in }2{,}023.1$ & & $9$  & $9$  & $9.0$  & $1\text{ in }1{,}214.0$ \\
+Ber (\#30) & $4$  & $4$  & $4.0$  & $1\text{ in }2{,}731.0$ & & $2$  & $2$  & $2.0$  & $1\text{ in }5{,}461.6$ \\
+\midrule
+\textbf{Vex--Ber} & $21$ & $23$ & $\mathbf{21.4}$ & $\mathbf{1\text{ \textbf{in} }510.8}$ & & $24$ & $24$ & $\mathbf{24.0}$ & $\mathbf{1\text{ \textbf{in} }455.5}$ \\
+\textbf{Pul--Ber} & $68$ & $73$ & $\mathbf{69.0}$ & $\mathbf{1\text{ \textbf{in} }158.7}$ & & $80$ & $84$ & $\mathbf{80.8}$ & $\mathbf{1\text{ \textbf{in} }135.6}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Waiting-Time Distribution and Dry Spell Survival Analysis}
+\label{subsec:dryspells}
+
+On \texttt{/players~7}, every rune from Gul (\#25) through Ber (\#30) has identical pattern counts in unlocked and locked chests (meaning that carrying keys on \texttt{/players~7} is about not forfeiting $20\%$ of your superchests rather than shifting the conditional Gul--Ber drop distribution), totaling $w_{\text{HR}} = 6 + 5 + 2 + 9 + 2 = 24$ Vex--Ber patterns per chest:
+\begin{equation}
+    p_{\text{chest}} = \frac{24}{65{,}534} \approx 3.66222 \times 10^{-4} \quad \left(\text{1 in } 2{,}730.58\text{ chests}\right).
+\end{equation}
+For a standard run opening $m = 6$ superchests (modeled as independent draws given the MWC multiplier transitions between chest openings), the probability of obtaining at least one High Rune in a single run is
+\begin{equation}
+    p_{\text{run}} = 1 - (1 - p_{\text{chest}})^6 \approx 2.19532 \times 10^{-3} \quad \left(\text{1 in } 455.51\text{ runs}\right).
+\end{equation}
+
+Let $T \in \{1, 2, \dots\}$ denote the number of runs until the first High Rune drops. Under Proposition~\ref{prop:shift}, successive runs are independent Bernoulli trials with parameter $p_{\text{run}}$, so $T \sim \text{Geom}(p_{\text{run}})$ with probability mass function $\mathbb{P}(T = n) = (1 - p_{\text{run}})^{n-1} p_{\text{run}}$. The expectation, standard deviation, and median of $T$ are:
+\begin{align}
+    \mu_T = \mathbb{E}[T] &= \frac{1}{p_{\text{run}}} \approx 455.51\text{ runs}, \\
+    \sigma_T = \text{SD}(T) &= \frac{\sqrt{1 - p_{\text{run}}}}{p_{\text{run}}} \approx 455.01\text{ runs}, \\
+    \text{Med}(T) &= \left\lceil \frac{\ln(1/2)}{\ln(1 - p_{\text{run}})} \right\rceil = 316\text{ runs}.
+\end{align}
+
+Because $\sigma_T \approx \mu_T$, the waiting time $T$ exhibits heavy right skewness. The probability of experiencing a ``dry spell'' of at least $n$ consecutive runs with zero High Runes is the survival function
+\begin{equation}
+\label{eq:survival}
+    S(n) = \mathbb{P}(T > n) = (1 - p_{\text{run}})^n = (1 - p_{\text{chest}})^{6n}.
+\end{equation}
+
+Table~\ref{tab:dryspells} evaluates $S(n)$ across benchmark run counts, alongside both the standardized linear score $z_{\text{lin}} = (n - \mu_T)/\sigma_T$ and the equivalent standard normal tail deviate ($z_{2\text{-sided}}$ such that $\mathbb{P}(|Z| > z_{2\text{-sided}}) = S(n)$ for $Z \sim \mathcal{N}(0,1)$).\footnote{Following standard convention when translating $p$-values into ``$\sigma$-levels,'' Table~\ref{tab:dryspells} reports the two-sided normal tail equivalent $z_{2\text{-sided}} = \Phi^{-1}(1 - S(n)/2)$. Because a dry spell $T > n$ is a one-sided upper-tail event, one may alternatively report the one-sided quantile $z_{1\text{-sided}} = \Phi^{-1}(1 - S(n))$, which equals $0.00\sigma$ at the median ($n = 316$), $2.25\sigma$ at $n = 2{,}000$, and $2.61\sigma$ at $n = 2{,}460$.}
+
+\begin{table}[htbp]
+\centering
+\caption{Survival probabilities $S(n) = \mathbb{P}(T > n)$ of a dry spell lasting $n$ consecutive $6$-chest Lower Kurast runs without a Vex--Ber drop on \texttt{/players~7}.}
+\label{tab:dryspells}
+\small
+\begin{tabular}{@{}rrrrrr@{}}
+\toprule
+Runs $n$ & Chests $6n$ & Survival $S(n)$ & Odds ($1$ in $S(n)^{-1}$) & Linear $z = \frac{n-\mu_T}{\sigma_T}$ & Normal Equiv.\ (2-sided) \\
+\midrule
+$316$   & $1{,}896$  & $49.93\%$ & $1\text{ in }2.0$   & $-0.31$ & $0.68\sigma$ \\
+$456$   & $2{,}736$  & $36.71\%$ & $1\text{ in }2.7$   & $0.00$  & $0.90\sigma$ \\
+$800$   & $4{,}800$  & $17.24\%$ & $1\text{ in }5.8$   & $+0.76$ & $1.36\sigma$ \\
+$1{,}000$ & $6{,}000$  & $11.11\%$ & $1\text{ in }9.0$   & $+1.20$ & $1.59\sigma$ \\
+$1{,}200$ & $7{,}200$  & $7.16\%$  & $1\text{ in }14.0$  & $+1.64$ & $1.80\sigma$ \\
+$1{,}500$ & $9{,}000$  & $3.70\%$  & $1\text{ in }27.0$  & $+2.30$ & $2.09\sigma$ \\
+$2{,}000$ & $12{,}000$ & $1.23\%$  & $1\text{ in }81.1$  & $+3.39$ & $2.50\sigma$ \\
+$2{,}460$ & $14{,}760$ & $0.45\%$  & $1\text{ in }222.8$ & $+4.41$ & $2.84\sigma$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{lk_figures.pdf}
+\caption{(a) Survival function $S(n) = \mathbb{P}(T > n)$ for a single High Rune wait on \texttt{/players~7} alongside the career probability $1 - (1 - S(n))^M$ of experiencing at least one drought of length $\ge n$ across $M \in \{10, 15\}$ High Rune drops. The shaded band highlights \texttt{Dead\_Sett}'s $2{,}000$--$2{,}460$ run dry spell. (b) Expected High Runes (Vex--Ber) per $100$ hours of Lower Kurast farming as a function of extra time $\Delta\tau$ spent performing superstitious actions per run.}
+\label{fig:lk_plots}
+\end{figure}
+
+Table~\ref{tab:dryspells} and Figure~\ref{fig:lk_plots}(a) place \texttt{Dead\_Sett}'s dry spell in exact statistical perspective:
+\begin{itemize}
+    \item Going $2{,}000$ consecutive runs with zero Vex--Ber drops has single-wait probability $S(2{,}000) = 1.23\%$ ($1$ in $81.1$), corresponding to a $2.50\sigma$ two-sided Gaussian tail event ($z_{\text{lin}} = +3.39$).
+    \item Going $2{,}460$ consecutive runs before dropping a Vex on run $2{,}461$ has single-wait probability $S(2{,}460) = 0.45\%$ ($1$ in $222.8$), corresponding to a $2.84\sigma$ two-sided Gaussian tail event ($z_{\text{lin}} = +4.41$).
+\end{itemize}
+Furthermore, a dedicated player completing a long-term goal (such as farming an Enigma or Infinity runeword) observes a sequence of independent waiting times $T_1, T_2, \dots, T_M$ across $M$ High Rune drops. The probability that \emph{at least one} inter-drop gap exceeds $n$ runs across $M$ drops is
+\begin{equation}
+    \mathbb{P}\!\left(\max_{1 \le i \le M} T_i > n\right) = 1 - \big(1 - S(n)\big)^M.
+\end{equation}
+For a player who farms $M = 15$ High Runes over a single-player career:
+\begin{itemize}
+    \item The probability of encountering at least one $1{,}000$-run dry spell is $1 - (1 - 0.11105)^{15} = \mathbf{82.89\%}$, and at least one $1{,}500$-run dry spell is $\mathbf{43.20\%}$.
+    \item The probability of encountering at least one $2{,}000$-run dry spell is $1 - (1 - 0.01233)^{15} = \mathbf{16.98\%}$ ($\approx 1$ in $6$ players), and at least one $2{,}460$-run dry spell is $1 - (1 - 0.00449)^{15} = \mathbf{6.52\%}$ ($\approx 1$ in $15$ players).
+\end{itemize}
+Across thousands of single-player Lower Kurast runners in the \emph{Diablo~II} community, a $1$-in-$223$ single-wait drought (or $1$-in-$15$ career drought) is guaranteed to happen to hundreds of players—and those who suffer it are precisely the ones most motivated to search YouTube for an explanation.
+
+\section{Regression to the Mean and the Cost of Superstition}
+\label{sec:reversion}
+
+We now formalize what transpires when a player, having endured a dry spell of $n_0 = 2{,}000$ runs, adopts the advice to ``do random things'' on run $n_0 + 1$ onward.
+
+\subsection{Memorylessness, Regression to the Mean, and Poisson Clustering: \texttt{Dead\_Sett}'s Full $4{,}554$-Run Ledger}
+\label{subsec:deadsett}
+
+Let $T_{\text{rem}} = T - n_0$ denote the number of \emph{additional} runs required to obtain a High Rune, conditioned on having failed for $n_0$ runs. By the memoryless property of the geometric distribution~\cite{feller1968}, for every $k \ge 1$,
+\begin{equation}
+    \mathbb{P}(T - n_0 > k \mid T > n_0) = \frac{\mathbb{P}(T > n_0 + k)}{\mathbb{P}(T > n_0)} = \frac{(1 - p_{\text{run}})^{n_0 + k}}{(1 - p_{\text{run}})^{n_0}} = (1 - p_{\text{run}})^k = \mathbb{P}(T > k).
+\end{equation}
+Consequently, conditioned on $T > n_0$, the remaining wait time $T_{\text{rem}}$ is distributed identically to $T$:
+\begin{equation}
+    \mathbb{E}[T - n_0 \mid T > n_0] = \mu_T \approx 455.51\text{ runs}, \qquad \text{Med}(T - n_0 \mid T > n_0) = 316\text{ runs}.
+\end{equation}
+Examining \texttt{Dead\_Sett}'s complete $4{,}554$-run dataset alongside the exact \texttt{/players~7} pattern frequencies reveals three textbook statistical phenomena operating simultaneously:
+
+\subsubsection*{1.\ The ``Repeated Gul and Lem'' Illusion}
+Before switching routines, \texttt{Dead\_Sett} cited finding three Gul runes and recurring Lem runes by run $2{,}842$ as proof that ``precise pathing'' was locking his character into repeated deterministic drops (\emph{``far too frequent for coincidence, I'm really concerned that something's wrong''}). Aside from the category error of confusing artificially fixed seeds with unseeded play (Proposition~\ref{prop:shift}), what is the actual expected number of Gul and Lem drops in $n = 2{,}842$ unseeded \texttt{/players~7} runs?
+\begin{itemize}
+    \item \textbf{Gul (\#25):} With $w_{\text{Gul}} = 11.0$ patterns per chest ($p_{\text{Gul,run}} \approx 1 / 993.4$), the expected number of Gul runes in $2{,}842$ runs is
+    \[
+        \mathbb{E}[N_{\text{Gul}}] = \frac{2{,}842}{993.4} = \mathbf{2.86\text{ Gul runes}},
+    \]
+    and the Poisson probability of observing \emph{exactly} $3$ Gul runes is $e^{-2.86} (2.86)^3 / 3! = \mathbf{22.3\%}$—making $3$ Gul runes the literal \emph{mode} (most probable single outcome) of the distribution!
+    \item \textbf{Lem (\#20):} On \texttt{/players~7}, Lem has $42$ unlocked and $44$ locked patterns ($w_{\text{Lem}} = 42.4$, or $1$ in $258.0$ runs), yielding an expectation of $\mathbb{E}[N_{\text{Lem}}] = 2{,}842 / 258.0 = \mathbf{11.0\text{ Lem runes}}$ by run $2{,}842$. Finding ``yet another Lem rune'' on run $2{,}842$ is not a glitch in the matrix; it is the law of large numbers doing its job.
+\end{itemize}
+
+\subsubsection*{2.\ Memoryless Post-Intervention Waiting Time}
+Around run $n_0 = 2{,}000$, after observing $0$ Vex--Ber runes over his opening $2{,}000$ runs, \texttt{Dead\_Sett} switches to his ``random behavior'' protocol (kicking logs, flipping corpses, varying routes). By Proposition~\ref{prop:shift}, this change has zero causal effect on $p_{\text{run}}$. By memorylessness, the conditional expected number of additional runs from run $2{,}000$ to his first High Rune is $\mathbb{E}[T - 2{,}000 \mid T > 2{,}000] = \mathbf{455.51}\text{ runs}$—and his Vex dropped on run $2{,}461$, i.e., after $\mathbf{461}$ additional runs (within $1.2\%$ of the exact unconditional expectation!).
+
+\subsubsection*{3.\ Post-Drought Poisson Clustering and Full-Sample Reversion}
+Even more striking is what transpired across the second half of his dataset (runs $2{,}461$ through $4{,}554$), where he recorded seven High Runes in $2{,}094$ runs (Table~\ref{tab:deadsett}).
+\begin{table}[htbp]
+\centering
+\caption{Complete High Rune (Vex--Ber) drop ledger recorded by \texttt{Dead\_Sett} across $4{,}554$ Lower Kurast runs on \texttt{/players~7}.}
+\label{tab:deadsett}
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Drop \# & Run Number & High Rune & Inter-Drop Gap (Runs) & Ber-Equivalent Value \\
+\midrule
+$1$ & $2{,}461$ & Vex (\#26) & $2{,}461$ ($461$ post-switch) & $0.0625\text{ Ber}$ \\
+$2$ & $3{,}153$ & Lo (\#28)  & $692$                         & $0.2500\text{ Ber}$ \\
+$3$ & $3{,}176$ & Lo (\#28)  & $\mathbf{23}$                 & $0.2500\text{ Ber}$ \\
+$4$ & $3{,}494$ & Sur (\#29) & $318$                         & $0.5000\text{ Ber}$ \\
+$5$ & $4{,}390$ & Sur (\#29) & $896$                         & $0.5000\text{ Ber}$ \\
+$6$ & $4{,}413$ & Sur (\#29) & $\mathbf{23}$                 & $0.5000\text{ Ber}$ \\
+$7$ & $4{,}554$ & Ber (\#30) & $141$                         & $1.0000\text{ Ber}$ \\
+\midrule
+\textbf{Total} & \textbf{Runs $1$--$4{,}554$} & $\mathbf{7\text{ \textbf{HRs}}}$ & \textbf{Mean gap $= 650.6$} & $\mathbf{3.0625\text{ \textbf{Ber}}}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+Notice the extreme positive tail events embedded in this post-intervention streak:
+\begin{itemize}
+    \item \textbf{Back-to-back natural Lo runes in $23$ runs (runs $3{,}153$ and $3{,}176$):} On \texttt{/players~7}, a direct Lo rune has only $2$ patterns per chest ($p_{\text{Lo,run}} \approx 1 / 5{,}461.6$). Conditioned on dropping a Lo on run $3{,}153$, the probability of dropping a \emph{second} natural Lo within the next $23$ runs is
+    \[
+        1 - \left(1 - \frac{1}{5{,}461.6}\right)^{23} \approx \mathbf{0.42\%} \quad \left(\text{1 in } 238\right).
+    \]
+    Irony of ironies: \texttt{Dead\_Sett}'s $23$-run double-Lo burst is \textbf{more improbable in isolation on the lucky tail ($1$ in $238$) than his entire $2{,}460$-run opening drought was on the unlucky tail ($1$ in $223$)}!\footnote{From a strict hypothesis-testing standpoint, there is a multiple-testing (\emph{look-elsewhere}) asymmetry between these two events: whereas the opening drought $T_1 > 2{,}460$ occurred on the fixed first waiting time, the $23$-run Lo-to-Lo and Sur-to-Sur gaps are post-hoc order statistics (minima) selected across $6$ inter-drop intervals in a $4{,}554$-run log. Across $6$ independent inter-High-Rune gaps ($p_{\text{run}} \approx 1/455.51$), the probability that at least one gap is $\le 23$ runs is $1 - ((1 - p_{\text{run}})^{23})^6 \approx 26.2\%$ (and the chance of observing at least one same-tier pair within $23$ runs across $7$ drops is roughly $6\%$--$9\%$). Far from weakening our argument, this look-elsewhere calculation is the essence of \textbf{Poisson clumping}: in a multi-thousand-run log, short back-to-back clusters are mathematically expected to occur somewhere, yet a human runner experiencing them after changing routines perceives a $1$-in-$238$ miracle.}
+    \item \textbf{Back-to-back Sur runes in $23$ runs (runs $4{,}390$ and $4{,}413$), followed by a Ber $141$ runs later (run $4{,}554$):} Conditioned on the Sur at run $4{,}390$, a second Sur within $23$ runs ($p_{\text{Sur,run}} \approx 1 / 1{,}214.0$) has probability $1.88\%$ ($1$ in $53$), and capping the next $141$ runs with a direct Ber ($p_{\text{Ber,run}} \approx 1 / 5{,}461.6$, probability $2.55\%$) delivers $2.0$ Ber-equivalents in just $164$ runs!
+    \item \textbf{Full-sample balance:} Over the $2{,}554$ runs following run $2{,}000$, he collected $3.0625$ Ber-equivalents from Vex--Ber alone, exceeding the $2{,}554$-run Vex--Ber expectation ($1.87$ Ber-equivalents, or $2.01$ Ber-equivalents including Pul--Gul) by $+63.7\%$. Across all $4{,}554$ runs, his $7$ Vex--Ber High Runes ($3.0625$ Ber-equivalents, or $\ge 3.16$ Ber-equivalents including his $3+$ Gul runes) sit less than one standard deviation below the unconditional $4{,}554$-run mean ($\mathbb{E}[N_{\text{HR}}] = 10.00 \pm 3.16$ High Runes; $3.34$ expected Vex--Ber Ber-equivalents, or $3.59$ expected Pul--Ber Ber-equivalents).
+\end{itemize}
+
+In statistical theory, this complete $4{,}554$-run arc is the definitive illustration of \textbf{regression to the mean} and \textbf{Poisson clumping}: an extreme $2.5\sigma$--$2.8\sigma$ opening drought ($T_1 > 2{,}000$) is followed by an unconditional mean wait ($461$ runs to Vex) and two memoryless short-gap bursts ($23$ runs Lo-to-Lo, $23$ runs Sur-to-Sur). In behavioral psychology, it replicates B.~F.~Skinner's (1948) classic pigeon experiments on \emph{superstitious conditioning}: because the human brain experiences a $2{,}460$-run drought as an eternity and two $23$-run High Rune bursts after changing behavior as immediate causal feedback, the runner becomes unshakably convinced that kicking logs unlocked the loot table.
+
+\subsection{The Strict Efficiency Penalty of ``Doing Random Things'' and the Collateral-Loot Fallacy}
+\label{subsec:collateral}
+
+While adding extraneous actions does not alter the per-run superchest probability $p_{\text{run}}$, it strictly increases the duration of each run. Let $\tau_0 > 0$ denote the mean duration (in seconds) of an optimized Lower Kurast run—typically $\tau_0 \in [20, 30]$ seconds in D2R including NVMe load times, achieved by (i) rolling a circular two-campfire map adjacent to the waypoint, (ii) popping chests and re-entering the waypoint through hut walls via the Sorceress's \emph{Telekinesis} skill, and (iii) returning to Act~IV (The Pandemonium Fortress) before ``Save and Exit'' (or stacking Faster Run/Walk and a \emph{Harmony} bow's \emph{Vigor} aura in Act~III) to eliminate the long Kurast Docks town walk—and let $\Delta \tau > 0$ denote the mean time spent per run performing non-essential actions. Over a farming horizon of $H = 3{,}600\text{ s}$ ($1$ hour), the expected arrival rate of High Runes is $\lambda(\tau) = (3{,}600 / \tau)\, p_{\text{run}}$, so
+\begin{equation}
+\label{eq:rate_penalty}
+    \frac{\lambda(\tau_0 + \Delta \tau)}{\lambda(\tau_0)} = \frac{\tau_0}{\tau_0 + \Delta \tau} < 1 \quad \forall\,\Delta \tau > 0.
+\end{equation}
+As illustrated in Figure~\ref{fig:lk_plots}(b), if an optimized runner averages $\tau_0 = 25\text{ s}$ per run ($\approx 144$ runs/hour, $\mathbb{E}[\text{wait}] = 3.16$ hours per HR) and adds just $\Delta \tau = 10\text{ s}$ of ``random actions'' per run ($\tau_1 = 35\text{ s}$), their High Rune acquisition rate drops by $28.6\%$, increasing the expected time per High Rune from $3.16$ hours to $4.43$ hours.
+
+\subsubsection*{The Collateral-Loot Fallacy (Gems, Charms, and Jewels)}
+A closely related cognitive bias in the Lower Kurast community—often invoked to rationalize slower, less disciplined runs—is the \textbf{collateral-loot fallacy}: \emph{``Because you have to run Lower Kurast thousands of times anyway, you should pick up and process all flawless gems, small and grand charms, and crafting jewels along the way.''}
+
+While it is true that Lower Kurast superchests drop a massive volume of magic charms, jewels, and flawless gems, this argument treats the processing cost of collateral items as zero. In reality, every item category added to the pickup filter introduces a multi-stage time overhead $\Delta \tau_{\text{loot}} > 0$ per run:
+\begin{enumerate}
+    \item \textbf{Visual parsing and acquisition ($\Delta \tau_{\text{click}}$):} Scanning densely cluttered ground text around six chests and walking back into huts to click Flawless Gems, Small Charms, Grand Charms, and Jewels.
+    \item \textbf{Identification and cognitive evaluation ($\Delta \tau_{\text{eval}}$):} Opening the inventory or visiting Cain, casting \emph{Identify}, and reading affix rolls—deciding whether a Small Charm is a worthless \emph{Burly Small Charm} ($+15$ Defense) or a keeper like a \emph{Shimmering Small Charm of Fortune} ($+5\%$ All Resistances, $+7\%$ Magic Find), or whether a Grand Charm rolled $+7\%$ Faster Run/Walk versus a $+1$ Paladin Combat Skills (\emph{Lion Branded}) skiller.
+    \item \textbf{Stash management and Horadric Cube overhead ($\Delta \tau_{\text{stash}}$):} Walking to the stash every few runs, sorting sets of three Flawless Gems to cube into Perfect Gems, transferring crafting Jewels to mules, and repeatedly rerolling \texttt{ilvl~80} Grand Charms.
+\end{enumerate}
+Let $n_{\text{pick}}$ denote the average number of collateral items picked up per run and $c_{\text{proc}}$ the amortized time (in seconds) required to click, identify, evaluate, cube, and stash each item. Then $\Delta \tau_{\text{loot}} = n_{\text{pick}}\, c_{\text{proc}}$. Even a modest pickup rate of $n_{\text{pick}} = 2.5$ items/run at $c_{\text{proc}} = 4\text{ s}$ per item (including periodic town/stash trips) injects $\Delta \tau_{\text{loot}} = 10\text{ s}$ per run—imposing the \textbf{exact same $28.6\%$ High Rune arrival-rate penalty} in \eqref{eq:rate_penalty} as kicking logs and flipping corpses! Over a $3{,}000$-run Enigma project at $\tau_0 = 25\text{ s}$, that $\Delta \tau_{\text{loot}} = 10\text{ s}$ overhead adds $8.33$ hours of pure inventory management—equivalent to $1{,}200$ lost Lower Kurast runs ($\approx 2.63$ expected Vex--Ber High Runes sacrificed).
+
+\begin{remark}[Skewness Fatigue, Consolation Prizes, and Informed Tradeoffs]
+None of the foregoing analysis is intended to prescribe how players \emph{ought} to enjoy a video game, nor to suggest that human runners are irrational for deviating from pure superchest isolation. Enduring a heavily right-skewed geometric waiting-time process ($\sigma_T \approx \mu_T \approx 455.5$ runs), in which hundreds of consecutive runs yield zero progress toward a High Rune, inflicts a genuine psychological toll. Leaning on ``consolation prizes''—identifying charms, cubing flawless gems, or clicking a convenient log—injects frequent low-variance reinforcement into an otherwise barren reinforcement schedule. Moreover, because Lower Kurast superchests roll forced-magic cycles that produce an extraordinary concentration of Small Charms, Grand Charms, and Jewels, an early-progression solo self-found (SSF) character with empty inventory slots may rationally adopt a \textbf{two-phase filter strategy}: spending an initial phase identifying charms until baseline resistances and class ``skillers'' are secured, and then tightening the loot filter exclusively to runes for the remaining thousands of runs. Even players who laugh when content creators like \texttt{Sweet Phil} find a Vex rune under a log and proclaim \emph{``always hit the poppables, I keep telling ya!''} inevitably make pragmatic or psychological concessions of their own (such as picking up Ort runes and chipped gems to recharge a \emph{Teleport} staff via the Horadric Cube for rushing new non-Sorceress characters before they meet \emph{Enigma}'s level~$65$ requirement). The mathematical point is not that collateral actions are forbidden, but that players should enter those tradeoffs \emph{with their eyes open}: Poppables, gems, and charms do not ``warm up'' the PRNG, and every second $\Delta\tau$ spent away from the six superchests carries an exact, quantifiable opportunity cost $\tau_0 / (\tau_0 + \Delta\tau)$ in High Runes per hour.
+\end{remark}
+
+\section{Cubing to a Given Target Rune}
+\label{sec:cubing}
+
+In practice, single-player farmers do not merely wait for a target rune $r^*$ to drop directly; they also collect lower-tier runes and upgrade them in the Horadric Cube. A remarkable structural property of the \emph{Diablo~II} rune hierarchy is that whereas low-to-mid runes (El through Lem) require \emph{three} runes per upgrade ($3 \to 1$), every rune from \textbf{Pul (\#21) through Ber (\#30)} upgrades via a uniform \textbf{$2$-to-$1$ binary rule}:\footnote{Because the gem-requiring Horadric Cube recipes begin at Thul (\#10) and cycle through the six gem types (Topaz, Amethyst, Sapphire, Ruby, Emerald, Diamond) by quality tier, the first $2$-to-$1$ upgrade—\textbf{Pul (\#21) $\to$ Um (\#22)}—is the final recipe of the \textbf{Flawed Gem} cycle ($2\text{ Pul} + 1\text{ Flawed Diamond} \to 1\text{ Um}$), whereas Um (\#22) through Ohm (\#27) require Standard Gems (Topaz through Diamond) and Lo (\#28) through Cham (\#32) require Flawless Gems (Topaz through Emerald). Veteran Lower Kurast runners typically keep a small reserve of Flawed Diamonds on hand, since Hell superchests drop predominantly Standard and Flawless gems.}
+\begin{equation}
+\label{eq:binary_cube}
+    2 \times \text{Rune}(i) + \text{Flawed/Standard/Flawless Gem} \longrightarrow 1 \times \text{Rune}(i+1) \qquad (21 \le i \le 29).
+\end{equation}
+
+\subsection{Geometric and Linear-Algebraic Intuition: From Stash Clutter to a 1D Board Game}
+
+Even in rigorous mathematical analyses of \emph{Diablo~II} drop rates—such as \texttt{ShrimpDiablo}'s video \emph{``Why you can't find Enigma''}—authors explicitly elide Horadric Cubing because enumerating every combination of partial rune drops makes direct combinatorial calculations appear intractable. Indeed, when a player asks \emph{``How many runs until I can make a Lo rune?''}, naive enumeration explodes into a branching tree of mutually exclusive cases: finding $1\text{ Lo}$ directly, \emph{or} $2\text{ Ohms}$, \emph{or} $1\text{ Ohm} + 2\text{ Vex}$, \emph{or} $1\text{ Ohm} + 1\text{ Vex} + 2\text{ Gul}$, \emph{or} $1\text{ Ohm} + 1\text{ Vex} + 1\text{ Gul} + 1\text{ Ist} + 2\text{ Mal}$, ad infinitum.\footnote{While players intuitively recognize that cubing from El (\#1) to Zod (\#33) requires $3^{20} \cdot 2^{12} \approx 1.43 \times 10^{13}$ El runes—a timescale approaching the heat death of the universe—cubing from Pul (\#21) to Lo (\#28) or Ber (\#30) spans only $7$ to $9$ binary steps ($2^7 = 128$ to $2^9 = 512$ Pul equivalents) and is entirely practical.}
+
+However, the uniform $2$-to-$1$ upgrade rule \eqref{eq:binary_cube} collapses this entire branching tree of inventory combinations onto a \textbf{one-dimensional number line}—a simple board game that can be solved exactly using nothing more than elementary linear algebra (back-substitution on an upper-triangular matrix).
+
+To see the geometry clearly before writing down the general case, consider a concrete miniature example: suppose a player is hunting a \textbf{Lo rune} and decides to pick up and cube only \textbf{Gul, Vex, Ohm, and Lo} runes. Because each tier requires exactly two of the previous tier ($2\text{ Gul} = 1\text{ Vex}$, $2\text{ Vex} = 1\text{ Ohm}$, $2\text{ Ohm} = 1\text{ Lo}$), we can measure every rune in \textbf{``Gul units''}:
+\[
+    \text{Gul} = 1 = 2^0, \qquad \text{Vex} = 2 = 2^1, \qquad \text{Ohm} = 4 = 2^2, \qquad \text{Lo} = 8 = 2^3.
+\]
+Whenever two identical runes are cubed together (for example, $2\text{ Vex} \to 1\text{ Ohm}$, or $2 + 2 = 4$), the operation is literally \emph{carrying the $1$ in base-$2$ (binary) addition}. Consequently, any combination of Gul, Vex, and Ohm runes in the player's stash is completely summarized by a single integer $V \in \{0, 1, 2, \dots, 8\}$ representing the player's total accumulated Gul units:
+\begin{itemize}
+    \item If the player has $1\text{ Ohm} + 1\text{ Vex} + 1\text{ Gul}$, their stash sits at square $V = 4 + 2 + 1 = 7$ on the board (in binary, $\mathtt{0111_2}$).
+    \item The moment a single additional Gul ($+1$) drops, the binary odometer rolls over ($\mathtt{0111_2} + \mathtt{0001_2} = \mathtt{1000_2} = 8$): $2\text{ Gul} \to \text{Vex}$, $2\text{ Vex} \to \text{Ohm}$, and $2\text{ Ohm} \to \text{Lo}$!
+\end{itemize}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{lk_markov_board.pdf}
+\caption{(a) Geometric representation of Horadric Cubing from $\text{Gul}\to\text{Lo}$ as a 1D board game on $9$ squares ($V \in \{0, 1, \dots, 8\}$ Gul units). Each chest or run advances the player's position forward by $+1$ (Gul), $+2$ (Vex), $+4$ (Ohm), or $+8$ (Lo), clamping at the absorbing goal square $W = 8$. (b) In linear algebra terms, because the player never loses runes, the state-transition matrix $P$ is \textbf{upper triangular} ($P_{i,j} = 0$ for all $i > j$), allowing exact solution by back-substitution from Square~$8$ down to Square~$0$.}
+\label{fig:markov_board}
+\end{figure}
+
+As illustrated in Figure~\ref{fig:markov_board}(a), farming for a target rune is therefore equivalent to moving a token along a finite one-dimensional board $\{0, 1, \dots, W\}$ (where $W = 8$ for $\text{Gul}\to\text{Lo}$, $W = 128$ for $\text{Pul}\to\text{Lo}$, and $W = 512$ for $\text{Pul}\to\text{Ber}$):
+\begin{enumerate}
+    \item \textbf{What makes it a Markov chain?} At the end of run $n$, your position on the board is some square $V_n \in \{0, 1, \dots, W\}$. Where you land on run $n+1$ depends \emph{only} on your current square $V_n$ and the random increment $\Delta V_{\text{run}}$ dropped in run $n+1$ ($V_{n+1} = \min(W, V_n + \Delta V_{\text{run}})$)—not on how many runs you spent reaching $V_n$.
+    \item \textbf{What makes it an ``absorbing'' Markov chain?} Squares $0, 1, \dots, W-1$ are \emph{transient}: the player has not yet crafted the target rune and continues running Lower Kurast. Square $W$ is the \emph{absorbing goal state}: once the player's stash reaches $\ge W$ units, the target rune is crafted and the farming project terminates (the token stays at Square $W$ forever, $P_{W,W} = 1$).
+    \item \textbf{How does linear algebra solve it?} Think of the probability distribution across the board after $n$ runs as a row vector $\mathbf{u}^{(n)} = [u_0^{(n)}, u_1^{(n)}, \dots, u_W^{(n)}]$, starting with $100\%$ of the probability at Square~$0$: $\mathbf{u}^{(0)} = [1, 0, \dots, 0]$. Each run simply multiplies this state vector by the $(W+1) \times (W+1)$ transition matrix $P$:
+    \[
+        \mathbf{u}^{(n)} = \mathbf{u}^{(0)} P^n.
+    \]
+    The last entry $u_W^{(n)}$—the fraction of probability mass that has been ``absorbed'' into the goal state $W$ after $n$ matrix multiplications—is the exact cumulative probability $F(n) = \mathbb{P}(R \le n)$ that the player has crafted their rune within $n$ runs! Better still, as shown in Figure~\ref{fig:markov_board}(b), because a player never loses runes ($\Delta V_{\text{run}} \ge 0$), every entry below the main diagonal of $P$ is zero ($P_{i,j} = 0$ for $i > j$). Thus, finding the expected number of runs to reach $W$ from any square $i$ is just solving an upper-triangular linear system by \textbf{back-substitution} starting from $E_W = 0$ and stepping backward to $E_0$.
+\end{enumerate}
+
+\subsection{Formal Binary Radix Criterion and Backward Recurrences}
+
+We now state and prove the general criterion for arbitrary starting and target runes. Fix a minimum rune tier $r_{\min} \in \{\text{Pul}, \dots, r^*\}$ that the player is willing to pick up and cube toward a target rune $r^* \in \{\text{Vex}, \text{Ohm}, \text{Lo}, \text{Sur}, \text{Ber}\}$, and let $K = \text{idx}(r^*) - \text{idx}(r_{\min}) \ge 0$ denote the number of upgrade steps separating $r_{\min}$ from $r^*$.
+
+Assign to each rune tier $r_j$ ($\text{idx}(r_{\min}) \le j \le \text{idx}(r^*)$) its binary radix weight in units of $r_{\min}$:
+\begin{equation}
+    v(r_j) = 2^{j - \text{idx}(r_{\min})} \in \{1, 2, 4, \dots, 2^K\}, \qquad W \coloneqq v(r^*) = 2^K.
+\end{equation}
+Note that runes strictly higher than $r^*$ (i.e., $j > \text{idx}(r^*)$) cannot be cubed downward in \emph{Diablo~II}; hence only drops in the range $\text{idx}(r_{\min}) \le j \le \text{idx}(r^*)$ contribute toward synthesizing $r^*$.
+
+\begin{proposition}[Binary Cubing Criterion]
+\label{prop:binary}
+Let $c_0, c_1, \dots, c_K \in \mathbb{Z}_{\ge 0}$ denote the inventory counts of runes from $r_{\min}$ ($k=0$) to $r^*$ ($k=K$). Repeated application of the $2$-to-$1$ Horadric Cube recipe \eqref{eq:binary_cube} can synthesize at least one copy of $r^*$ if and only if the total binary valuation satisfies
+\begin{equation}
+\label{eq:valuation}
+    V = \sum_{k=0}^{K} c_k\, 2^k \ge 2^K = W.
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Necessity is immediate because each cubing operation replaces two runes of weight $2^k$ with one rune of weight $2^{k+1}$, leaving the sum $V = \sum_{k=0}^K c_k 2^k$ invariant, and a single copy of $r^*$ has weight $2^K$. For sufficiency, proceed by induction on $K$. The base case $K=0$ ($c_0 \ge 1$) is trivial. For $K \ge 1$, if $c_K \ge 1$ we are done; otherwise $c_K = 0$ and $\sum_{k=0}^{K-1} c_k 2^k \ge 2^K$. Performing $\lfloor c_0 / 2 \rfloor$ upgrades on tier $0$ leaves at most one leftover rune at tier $0$ ($c_0' = c_0 \bmod 2 \in \{0, 1\}$) and updates $c_1' = c_1 + \lfloor c_0 / 2 \rfloor$. Since $c_0' 2^0 \le 1$ and the total sum is at least $2^K \ge 2$, the remaining sum over tiers $1 \le k \le K-1$ satisfies $\sum_{k=1}^{K-1} c_k' 2^k \ge 2^K$, or $\sum_{k=1}^{K-1} c_k' 2^{k-1} \ge 2^{K-1}$, which by the induction hypothesis cubes to $r^*$.
+\end{proof}
+
+By Proposition~\ref{prop:binary}, the exact progress of a player cubing toward $r^*$ from $r_{\min}$ is tracked by a discrete-time absorbing Markov chain~\cite{kemeny_snell} on the finite state space $\mathcal{S} = \{0, 1, \dots, W\}$, where state $W = 2^K$ is absorbing. In a single chest opening, the valuation increment $\Delta V$ takes value $2^k$ with probability $p_{(k)} = w_{r_k} / N_{\text{pat}}$ ($0 \le k \le K$) and value $0$ with probability $p_{(0)}^{\text{none}} = 1 - \sum_{k=0}^K p_{(k)}$. Over a $6$-chest run, the run increment $\Delta V_{\text{run}} = \sum_{c=1}^6 \Delta V_c$ has probability mass function $g(v) = \mathbb{P}(\Delta V_{\text{run}} = v)$ given by the $6$-fold discrete convolution of the single-chest increment distribution.\footnote{We intentionally formulate the Markov chain at the granularity of complete $6$-chest runs rather than individual chest clicks: in practice, no \emph{Diablo~II} player who drops their final rune on chest~\#2 immediately exits the game without opening the remaining four superchests in that $25$-second run, and at the human level, players plan a Holy Grail project in terms of full runs and $1$-to-$2$ hour weekend sessions rather than individual chest openings.}
+
+Because $\Delta V_{\text{run}} \ge 0$, the transition matrix on the transient states $\{0, 1, \dots, W-1\}$ is upper triangular. Conditioning on the outcome of a single run from state $i < W$ yields $E_i = 1 + g(0) E_i + \sum_{v=1}^{W-1-i} g(v) E_{i+v}$ (since any jump $i + v \ge W$ lands in the absorbing state where $E_W = 0$). Solving for $E_i$ (and similarly for the second moment $M_i = \mathbb{E}[R^2 \mid V_0 = i]$) gives the exact back-substitution formulas:
+\begin{align}
+\label{eq:markov_mean}
+    E_i &= \frac{1 + \sum_{v=1}^{W-1-i} g(v)\, E_{i+v}}{1 - g(0)}, \\
+\label{eq:markov_var}
+    M_i &= \frac{2 E_i - 1 + \sum_{v=1}^{W-1-i} g(v)\, M_{i+v}}{1 - g(0)}, \qquad \text{SD}(R) = \sqrt{M_0 - E_0^2}.
+\end{align}
+
+Table~\ref{tab:cubing} (presented in Section~\ref{sec:bluf}) reports the exact expected run counts $E_0 = \mathbb{E}[R]$ and standard deviations $\text{SD}(R)$ computed from \eqref{eq:markov_mean}--\eqref{eq:markov_var} for target runes $r^* \in \{\text{Mal}, \text{Ist}, \text{Gul}, \text{Vex}, \text{Ohm}, \text{Lo}, \text{Sur}, \text{Ber}\}$ under three cubing policies: (i) direct drops only ($r_{\min} = r^*$), (ii) cubing High Runes plus Gul ($r_{\min} = \text{Gul}$), and (iii) cubing all runes from Pul upward ($r_{\min} = \text{Pul}$).
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{lk_cubing_figures.pdf}
+\caption{(a) Exact cumulative distribution function $F(n) = \mathbb{P}(R \le n)$ of the number of $6$-chest Lower Kurast runs required to acquire a Lo rune on \texttt{/players~7} vs.\ \texttt{/players~5}, comparing full Horadric Cubing ($\text{Pul}\to\text{Lo}$) against direct Lo drops only. The cubing CDF on \texttt{/players~7} crosses above \texttt{/players~5} at $n = 1{,}319$ runs ($43.8\%$) and exhibits substantially lower tail risk. (b) Expected $6$-chest runs $\mathbb{E}[R]$ to acquire each High Rune (Vex--Ber) on \texttt{/players~7} vs.\ \texttt{/players~5} under Pul+ and Gul+ cubing.}
+\label{fig:cubing_plots}
+\end{figure}
+
+\subsection{Why Naive Spreadsheet Division Underestimates Runs: The ``Leftover Change'' (Boundary Overshoot) Penalty}
+\label{subsec:overshoot}
+
+When community guides and spreadsheets estimate the number of runs required to cube a target High Rune or complete \emph{Enigma} ($1\text{ Jah} + 1\text{ Ber} = 3\text{ Ber}$ equivalents when cubed in Lower Kurast), they almost universally rely on a \textbf{naive linear-drift approximation}: adding up the average fractional value of every rune dropped per run into a single drift rate $\mathbb{E}[\Delta V_{\text{run}}]$ and dividing the target valuation $W$ by that rate:
+\begin{equation}
+\label{eq:naive_drift}
+    R_{\text{naive}} = \frac{W}{\mathbb{E}[\Delta V_{\text{run}}]}.
+\end{equation}
+On \texttt{/players~7} (cubing Pul+), this naive ratio yields $1{,}268.5$ runs for a single Ber, $1{,}294.0$ runs for a Lo, and the widely cited community benchmark of $3{,}805.6$ runs for \emph{Enigma}.
+
+Yet as shown in the rightmost column of Table~\ref{tab:cubing} (Section~\ref{subsec:bluf_runs}), our exact absorbing Markov chain reveals that the naive formula \textbf{systematically underestimates the true expected run count by $21\%$ to $26\%$ for single High Runes} ($1{,}558.0$ vs.\ $1{,}268.5$ runs for Ber; $1{,}569.9$ vs.\ $1{,}294.0$ runs for Lo) and by $+330.8$ runs for \emph{Enigma} ($4{,}136.4$ vs.\ $3{,}805.6$ runs).
+
+At first glance, the reason for this gap—known in stochastic processes as the \textbf{boundary overshoot penalty}—can feel counterintuitive. Suppose a player hunting a Lo rune sits at Square~$7$ on our $\text{Gul}\to\text{Lo}$ board ($1\text{ Ohm} + 1\text{ Vex} + 1\text{ Gul} = \frac{7}{8}\text{ Lo}$) and suddenly drops a natural Lo rune ($+8$ squares, landing at $V_R = 15$). A natural question arises: \emph{``If a direct Lo drops while I am at Square~$7$, didn't I just finish my goal immediately? How could overshooting the boundary make the true expected run count \textbf{higher} than the naive estimate?''}
+
+The answer is that dropping the natural Lo did not slow the player down; rather, \textbf{it rendered the $\frac{7}{8}\text{ Lo}$ already sitting in the player's stash completely redundant for crafting that first Lo rune!} Look at what the naive formula \eqref{eq:naive_drift} implicitly assumed when it added Ohm, Vex, Gul, and direct Lo drops together in the denominator $\mathbb{E}[\Delta V_{\text{run}}]$:
+\begin{itemize}
+    \item By dividing $1.0\text{ Lo}$ ($W = 8$) by the combined drift rate of all runes from Pul to Lo, the naive spreadsheet assumes that \textbf{$100\%$ of every rune ever picked up merges seamlessly into the target rune with zero ``leftover change'' in the stash}—as if a player holding $\frac{7}{8}\text{ Lo}$ in cubed runes could combine them with $\frac{1}{8}$ of a natural Lo drop!
+    \item In reality, runes arrive in discrete lumps. Whenever a player standing at Square~$7$ ($\frac{7}{8}\text{ Lo}$) finishes their goal by dropping a natural Lo ($+1.0\text{ Lo}$) or an Ohm ($+0.5\text{ Lo}$), they end the grind holding $1.875\text{ Lo}$ or $1.375\text{ Lo}$ in total value. The extra $0.875\text{ Lo}$ or $0.375\text{ Lo}$ sitting in their stash is \textbf{unused change} ($\text{overshoot } V_R - W > 0$) that contributed nothing to completing the target Lo rune, even though the naive formula gave those runes full credit in $\mathbb{E}[\Delta V_{\text{run}}]$.
+\end{itemize}
+
+\subsubsection*{A Concrete Two-Rune Miniature Example ($\text{Ohm} + \text{Lo}$)}
+To see the mechanism with crystal clarity, consider a simplified Lower Kurast where only two runes exist:
+\begin{itemize}
+    \item \textbf{Ohm} ($= 0.5\text{ Lo}$), dropping with probability $1/1{,}000$ per run;
+    \item \textbf{Lo} ($= 1.0\text{ Lo}$), dropping with probability $1/1{,}000$ per run.
+\end{itemize}
+A player wants $1.0\text{ Lo}$ (either via $1$ natural Lo or by cubing $2$ Ohms).
+\begin{enumerate}
+    \item \textbf{What the naive spreadsheet predicts:} Each run drops an average of $\frac{1}{1{,}000}(0.5) + \frac{1}{1{,}000}(1.0) = \frac{1.5}{1{,}000}\text{ Lo}$ per run. Dividing the $1.0\text{ Lo}$ target by this rate gives
+    \[
+        R_{\text{naive}} = \frac{1.0\text{ Lo}}{1.5 / 1{,}000\text{ Lo/run}} = \mathbf{666.7\text{ runs}}.
+    \]
+    \item \textbf{What actually happens:} On any run, the probability of \emph{some} rune dropping (either Ohm or Lo) is $\frac{2}{1{,}000} = \frac{1}{500}$, so the player waits an average of $\mathbf{500\text{ runs}}$ just to see their \emph{first} rune drop:
+    \begin{itemize}
+        \item With probability $1/2$, that first drop is a \textbf{Lo}: the player finishes immediately ($500$ runs).
+        \item With probability $1/2$, that first drop is an \textbf{Ohm}: the player now holds $0.5\text{ Lo}$ and must wait an average of \emph{another} $\mathbf{500\text{ runs}}$ for a second rune drop (which will be either a second Ohm or a natural Lo, either of which completes the goal).
+    \end{itemize}
+    Thus, the \textbf{true expected number of runs} is not $666.7$, but
+    \[
+        \mathbb{E}[R] = 500 + \frac{1}{2}(500) = \mathbf{750.0\text{ runs}} \quad \left(+12.5\%\text{ higher than } R_{\text{naive}}\right).
+    \]
+    \item \textbf{Where the extra $83.3$ runs went:} Look at the $50\%$ of players whose first drop was an Ohm ($0.5\text{ Lo}$). Half of them ($25\%$ of all players) finished on their second drop by finding a \emph{second} Ohm ($0.5 + 0.5 = 1.0\text{ Lo}$, zero leftovers). The other half ($25\%$ of all players) were holding $1\text{ Ohm}$ when a \emph{natural Lo} dropped! That $25\%$ group finished the grind holding $\mathbf{1.5\text{ Lo}}$ ($1\text{ Lo}$ plus $1\text{ unused Ohm}$ in the stash). Across all players, the average total rune value sitting in the stash at the moment the grind ends is
+    \[
+        \mathbb{E}[V_R] = 0.75 \times (1.0\text{ Lo}) + 0.25 \times (1.5\text{ Lo}) = \mathbf{1.125\text{ Lo}} \quad (\text{target } 1.0\text{ Lo} + \text{expected leftover } 0.125\text{ Lo}).
+    \]
+    And how many runs does it take at the drift rate of $1.5\text{ Lo per }1{,}000\text{ runs}$ to generate $1.125\text{ Lo}$ of total value?
+    \[
+        \mathbb{E}[R] = \frac{\mathbb{E}[V_R]}{\mathbb{E}[\Delta V_{\text{run}}]} = \frac{1.0\text{ Lo} + 0.125\text{ Lo}}{1.5 / 1{,}000\text{ Lo/run}} = \mathbf{750.0\text{ runs}}.
+    \]
+\end{enumerate}
+
+This exact identity—known in probability theory as \textbf{Wald's identity}, $\mathbb{E}[R] = \big(W + \mathbb{E}[V_R - W]\big) / \mathbb{E}[\Delta V_{\text{run}}]$—explains both why naive spreadsheets underestimate single-rune grinds by $21\%$--$26\%$ \emph{and} why the percentage penalty shrinks for multi-Ber runewords in Table~\ref{tab:cubing}:
+\begin{itemize}
+    \item When farming a \textbf{single Ber} ($W = 512$), the player stops the moment they cross $512$, leaving an average of $\mathbb{E}[V_R - 512] = 0.228\text{ Ber}$ ($\approx 117$ Pul units) of unused ``leftover change'' in the stash ($+22.8\%$ overshoot penalty: $1{,}558.0$ vs.\ $1{,}268.5$ runs).
+    \item When farming \textbf{\emph{Infinity} ($2\text{ Ber}$)} or \textbf{\emph{Enigma} ($3\text{ Ber}$)}, the leftover change sitting in the stash after completing Ber~\#1 is \emph{not wasted}—it rolls directly over as a head start on Ber~\#2! Consequently, while the first Ber takes $1{,}558.0$ expected runs, the second Ber requires only $2{,}865.3 - 1{,}558.0 = \mathbf{1{,}307.3\text{ additional runs}}$, and the third Ber requires only $4{,}136.4 - 2{,}865.3 = \mathbf{1{,}271.1\text{ additional runs}}$ (nearly matching the naive drift rate of $1{,}268.5$ runs), reducing the cumulative overshoot penalty from $+22.8\%$ down to $+12.9\%$ for \emph{Infinity} and $+8.7\%$ for \emph{Enigma}.
+\end{itemize}
+
+\begin{remark}[Strategic Stash Corollaries: ``Just-in-Time'' Cubing and Preserving Scarce Lo Runes]
+\label{rem:lazy_cubing}
+Combining Proposition~\ref{prop:binary} with the boundary-overshoot mechanism yields two practical rules for single-player stash management:
+\begin{enumerate}
+    \item \textbf{``Just-in-Time'' (Lazy) Cubing:} Because the binary valuation $V = \sum_{k=0}^K c_k 2^k$ is invariant under \eqref{eq:binary_cube}, a player achieves the \emph{exact same} Markov stopping time $R = \inf\{n : V_n \ge W\}$ by holding all Pul--Ohm runes \textbf{uncubed} in the stash until the exact run on which $V_n \ge W$. If a player hunting a Lo rune greedily cubes $2\text{ Gul} \to \text{Vex}$ and $2\text{ Vex} \to \text{Ohm}$ after every run and subsequently drops a natural Lo rune (boundary overshoot), they have irreversibly destroyed flexible Vex and Gul runes (needed for \emph{Heart of the Oak}, \emph{Mosaic}, or \emph{Flickering Flame}) into a redundant second Ohm. Lazy cubing captures $100\%$ of the Markov chain's speedup while keeping all ``leftover change'' in its most flexible uncubed denominations.
+    \item \textbf{Withholding Scarce Lo Runes from Sur/Ber Cubing:} On an early single-player account, natural Lo drops are so rare on \texttt{/players~7} ($2$ patterns per chest vs.\ $9$ for Sur) and so transformative for physical and mercenary builds (\emph{Grief} and \emph{Fortitude}) that veteran runners almost never cube $2\text{ Lo} \to 1\text{ Sur}$. Our upper-triangular recurrence \eqref{eq:markov_mean}--\eqref{eq:markov_var} accommodates this policy directly: if a player withholds natural Lo drops ($p_{(\text{Lo})} = 0$) while still cubing Pul--Ohm upward, expected runs on \texttt{/players~7} increase only modestly from $1{,}037.4$ to $1{,}115.2$ runs for Sur and from $1{,}558.0$ to $1{,}659.1$ runs for Ber ($3{,}056.5$ for \emph{Infinity}; $4{,}404.4$ for \emph{Enigma}). Even if a player reserves \emph{all} Pul--Lo drops to build \emph{Heart of the Oak}, \emph{Call to Arms}, \emph{Grief}, and \emph{Fortitude} in parallel and cubes only Sur $+$ Ber ($r_{\min} = \text{Sur}$) toward Ber-tier runewords, a single Ber takes $1{,}805.8$ runs, \emph{Infinity} takes $3{,}490.3$ runs, and \emph{Enigma} takes $5{,}170.7$ runs.
+\end{enumerate}
+\end{remark}
+
+\section{Myth: ``The Lo Rune Is More Likely on \texttt{/players 5}''}
+\label{sec:p5myth}
+
+A pervasive piece of advice in Lower Kurast guides is that players seeking a \textbf{Lo rune} (essential for the \emph{Grief} and \emph{Fortitude} runewords) should switch from \texttt{/players~7} to \texttt{/players~5}. The superficial rationale is visible in the ``Lo (\#28)'' row of Table~\ref{tab:patterns}: \texttt{/players~5} possesses $4$ direct Lo patterns per chest, whereas \texttt{/players~7} possesses only $2$. If a player refuses to use the Horadric Cube, direct Lo drops indeed occur twice as frequently on \texttt{/players~5} ($\mathbb{E}[R] = 2{,}731.0$ runs vs.\ $5{,}461.6$ runs on \texttt{/players~7}).
+
+However, no rational single-player farmer ignores Ohm, Vex, and Gul drops while hunting a Lo rune. When we apply the absorbing Markov chain framework of Section~\ref{sec:cubing}, the ``\texttt{/players~5} for Lo'' recommendation collapses completely:
+
+\begin{corollary}[Strict Dominance of \texttt{/players~7} for Lo Rune Acquisition]
+\label{cor:lo_myth}
+Under Horadric Cubing from either Gul upward ($r_{\min} = \text{Gul}$) or Pul upward ($r_{\min} = \text{Pul}$), \texttt{/players~7} strictly dominates \texttt{/players~5} for acquiring a Lo rune across all primary statistical metrics:
+\begin{enumerate}
+    \item \textbf{Lower Expected Runs:} Cubing from Pul upward requires $\mathbb{E}[R_{\texttt{p7}}] = \mathbf{1{,}569.9}$ runs on \texttt{/players~7} versus $\mathbb{E}[R_{\texttt{p5}}] = \mathbf{1{,}714.2}$ runs on \texttt{/players~5} (an $8.4\%$ reduction in expected runs; cubing from Gul upward requires $1{,}753.0$ vs.\ $1{,}885.9$ runs).
+    \item \textbf{Lower Median and Tail Risk ($90$th Percentile):} As shown in Figure~\ref{fig:cubing_plots}(a), the cumulative distribution function $F_{\texttt{p7}}(n) = \mathbb{P}(R_{\texttt{p7}} \le n)$ overtakes $F_{\texttt{p5}}(n)$ at $n^* = 1{,}319$ runs ($F(1{,}319) = 43.8\%$). Consequently, \texttt{/players~7} achieves both a lower median wait ($\mathbf{1{,}461}$ vs.\ $\mathbf{1{,}519}$ runs) and a dramatically lower $90$th-percentile drought ($\mathbf{2{,}820}$ vs.\ $\mathbf{3{,}401}$ runs; standard deviation $928.9$ vs.\ $1{,}223.2$ runs).
+    \item \textbf{Superior Sur and Overall High-Rune Yield on \texttt{/players~7}:} Because Sur and Ber cannot be cubed downward into Lo, their drops are orthogonal to the Lo Markov chain. However, on \texttt{/players~7}, the player simultaneously enjoys a $66.7\%$ higher Sur drop rate ($9.0$ vs.\ $5.4$ patterns per chest) and a $12.1\%$ higher total High Rune rate ($24.0$ vs.\ $21.4$ Vex--Ber patterns per chest), plus extra leftover mid-runes (Mal, Ist, Gul) for \emph{Call to Arms}, \emph{Heart of the Oak}, and \emph{Infinity}.
+\end{enumerate}
+\end{corollary}
+
+Let us examine the mechanism behind Corollary~\ref{cor:lo_myth}. Why does \texttt{/players~7} beat \texttt{/players~5} for Lo despite having half as many direct Lo patterns? Consider the total \textbf{Lo-equivalent pattern weight} per chest from Pul through Lo, where each rune $r_k$ is weighted by $2^{k - \text{idx}(\text{Lo})}$:
+\begin{equation}
+    W_{\text{Lo}}(\texttt{/p7}) = 2.0 + \frac{5.0}{2} + \frac{6.0}{4} + \frac{11.0}{8} + \frac{5.4}{16} + \frac{14.2}{32} + \frac{10.2}{64} + \frac{16.0}{128} = \mathbf{8.441}\text{ Lo-patterns/chest},
+\end{equation}
+whereas on \texttt{/players~5}, the collapse of Ohm ($5 \to 2$) and Gul ($11 \to 5$) patterns reduces the Lo-equivalent drift to
+\begin{equation}
+    W_{\text{Lo}}(\texttt{/p5}) = 4.0 + \frac{2.0}{2} + \frac{6.0}{4} + \frac{5.0}{8} + \frac{5.2}{16} + \frac{10.0}{32} + \frac{11.0}{64} + \frac{16.4}{128} = \mathbf{8.063}\text{ Lo-patterns/chest}.
+\end{equation}
+On \texttt{/players~7}, the $5$ Ohm patterns ($= 2.5$ Lo) and $11$ Gul patterns ($= 1.375$ Lo) more than compensate for the $2$ fewer direct Lo patterns, providing both a higher mean drift ($8.441$ vs.\ $8.063$ Lo-equivalents per $65{,}534$ chests) and a much smoother, lower-variance progression that avoids the $3{,}400$-run dry spells of \texttt{/players~5}.
+
+\subsection{Expanding the Scope: Universal Dominance Across Mal Through Ber}
+\label{subsec:mal_ber_dominance}
+
+Can this dominance of \texttt{/players~7} be expanded beyond the High Runes? When we evaluate the absorbing Markov chain for every mid-rune down to Pul (\#21), a striking result emerges: \textbf{\texttt{/players~7} strictly dominates \texttt{/players~5} for every single rune from Mal (\#23) through Ber (\#30)}.
+
+\begin{theorem}[Universal Dominance of \texttt{/players~7} for Mal Through Ber]
+\label{thm:mal_ber}
+Under Horadric Cubing from Pul upward ($r_{\min} = \text{Pul}$), \texttt{/players~7} strictly dominates \texttt{/players~5} for acquiring every target rune $r^* \in \{\text{Mal}, \text{Ist}, \text{Gul}, \text{Vex}, \text{Ohm}, \text{Lo}, \text{Sur}, \text{Ber}\}$ across all primary statistical measures:
+\begin{enumerate}
+    \item \textbf{Lower Expected Runs:} The expected number of $6$-chest runs satisfies $\mathbb{E}[R_{\texttt{p7}}] < \mathbb{E}[R_{\texttt{p5}}]$ uniformly across the entire Mal--Ber range (Table~\ref{tab:cubing}). Specifically, \texttt{/players~7} reduces expected runs by $15.6\%$ for Mal ($559.4$ vs.\ $662.5$ runs), $12.4\%$ for Ist ($768.2$ vs.\ $876.5$ runs), $35.1\%$ for Gul ($699.0$ vs.\ $1{,}076.4$ runs), $23.2\%$ for Vex ($861.7$ vs.\ $1{,}121.4$ runs), $35.5\%$ for Ohm ($1{,}057.8$ vs.\ $1{,}641.1$ runs), $8.4\%$ for Lo ($1{,}569.9$ vs.\ $1{,}714.2$ runs), $29.2\%$ for Sur ($1{,}037.4$ vs.\ $1{,}464.4$ runs), and $1.2\%$ for Ber ($1{,}558.0$ vs.\ $1{,}576.9$ runs).
+    \item \textbf{First-Order Stochastic Dominance for Mal, Ist, and Gul:} For target runes $r^* \in \{\text{Mal}, \text{Ist}, \text{Gul}\}$, the cumulative distribution functions satisfy
+    \begin{equation}
+        F_{\texttt{p7}}(n) \ge F_{\texttt{p5}}(n) \quad \text{for all } n \ge 1,
+    \end{equation}
+    with strict inequality for all $n > 0$. Unlike the Lo rune—where \texttt{/players~5} enjoys a transient lead in cumulative probability before \texttt{/players~7} overtakes it at $n^* = 1{,}319$ runs—\texttt{/players~7} possesses strictly higher direct pattern counts for Mal ($14.2$ vs.\ $10.0$ patterns), Ist ($5.4$ vs.\ $5.2$ patterns), and Gul ($11.0$ vs.\ $5.0$ patterns). As a result, \texttt{/players~7} leads at \textbf{every single run count} $n \ge 1$ without any crossover point, achieving both a lower median wait (Mal: $446$ vs.\ $548$ runs; Ist: $670$ vs.\ $771$ runs; Gul: $586$ vs.\ $966$ runs) and dramatically lower $90$th-percentile tail risk (Mal: $1{,}192$ vs.\ $1{,}368$ runs; Ist: $1{,}494$ vs.\ $1{,}696$ runs; Gul: $1{,}449$ vs.\ $2{,}070$ runs).
+\end{enumerate}
+\end{theorem}
+
+\begin{remark}[The Pul and Um Exception and Why It Does Not Justify \texttt{/players~5}]
+\label{rem:pul_um}
+Only at the very base of the mid-rune ladder—\textbf{Pul (\#21)} and \textbf{Um (\#22)}—does \texttt{/players~5} exhibit slightly higher drop densities:
+\begin{itemize}
+    \item \textbf{Pul (\#21):} Unlocked and locked chest weighting yields $w_{\text{Pul}} = 16.4$ patterns on \texttt{/players~5} vs.\ $16.0$ patterns on \texttt{/players~7}, translating to $\mathbb{E}[R] = 666.4$ runs on \texttt{/players~5} versus $683.1$ runs on \texttt{/players~7} (a $2.5\%$ advantage for \texttt{/players~5}). Because Pul is the base of the binary cubing lattice, cubing from Pul+ is identical to direct drops.
+    \item \textbf{Um (\#22):} \texttt{/players~5} possesses $11.0$ patterns per chest versus $10.2$ on \texttt{/players~7} ($1\text{ in }993.4$ vs.\ $1\text{ in }1{,}071.2$ runs direct). When cubing Pul+, expected runs are $\mathbb{E}[R_{\texttt{p5}}] = 637.6$ runs (median $500$) versus $\mathbb{E}[R_{\texttt{p7}}] = 671.9$ runs (median $528$), giving \texttt{/players~5} a minor $5.1\%$ edge ($34.3$ runs).
+\end{itemize}
+This shift occurs because the underlying \texttt{TreasureClassEx.txt} item-generation cascade allocates marginally more probability to lower item tiers on lower player counts. 
+
+However, this statistical footnote provides \textbf{zero justification} for running Lower Kurast on \texttt{/players~5}:
+\begin{enumerate}
+    \item \textbf{Hell Countess Is the Intended Mid-Rune Engine:} The Hell Countess possesses a special rune drop routine that drops up to $3$ runes from \texttt{Countess Rune (H)} (cascading from \texttt{Runes~12} down to Ist) on \texttt{/players~1}, independent of superchest mechanics. Her exact direct drop rate is approximately $1\text{ in }131$ runs for Pul and $1\text{ in }196$ runs for Um (combined direct probability of $\sim 1\text{ in }78$ runs for either Pul or Um), and when factoring in cubing from lower mid-runes (Lem/Fal/Ko) alongside direct drops, her average mid-rune yield is $\approx 0.070\text{ Pul-equivalents per run}$ (accumulating $1\text{ Pul-equivalent}$ of total rune wealth every $\sim 14$ runs, or $1\text{ Um-equivalent}$ every $\sim 28$ runs). By contrast, farming Lower Kurast for $670$ runs ($\approx 4.6\text{ hours}$) specifically to acquire an Um rune is massively suboptimal regardless of player setting.
+    \item \textbf{Catastrophic Opportunity Cost:} Dropping from \texttt{/players~7} to \texttt{/players~5} to shave $34$ runs off an Um rune causes the player to forfeit a $42.0\%$ boost in Mal runes, a $120.0\%$ boost in Gul runes, a $150.0\%$ boost in Ohm runes, a $66.7\%$ boost in Sur runes, and a $12.1\%$ boost in total High Runes. Lower Kurast is an engine for High Runes; running \texttt{/players~5} cripples that engine for a negligible gain on runes easily obtained elsewhere.
+\end{enumerate}
+\end{remark}
+
+\subsection{Case Study: The 12,000-Run \texttt{/players~5} Illusion (\texttt{SirFoxGaming})}
+\label{subsec:sirfox}
+
+The popular advocacy for farming Lower Kurast on \texttt{/players~5} reached its empirical zenith in content creator \texttt{SirFoxGaming}'s video, \emph{12000 LOWER KURAST RUNS ON P5}~\cite{sirfox2023}, which cited an influential Reddit Monte Carlo analysis by \texttt{Slivenius}~\cite{slivenius2024} purporting to show that \texttt{/players~5} optimizes high-rune targets like Ber and Lo.\footnote{In his original simulation, \texttt{Slivenius}~\cite{slivenius2024} initially omitted Gul runes entirely and incorporated non-superchest ``poppables'' (corpses, logs, skeletons) without accounting for the run-time dilation tax $\Delta\tau$ (Section~\ref{subsec:collateral}). Even after adding an edit acknowledging that Gul runes close the gap to $\sim 1.5\%$, the model relied on continuous linear drift rather than discrete absorbing Markov cubing, overlooking how \texttt{/players~7}'s massive Ohm ($+150\%$) and Gul ($+120\%$) yields strictly overturn the direct Ber/Lo advantage across every rune from Mal through Ber.} The video thumbnail boldly proclaims: \emph{``This is why you run Lower Kurast on Players 5.''} Over an arduous endurance trial of $N = 12{,}000$ consecutive $6$-chest runs (opening $m = 72{,}000$ superchests—representing approximately $\sim 83.3\text{ hours}$ of frame-perfect $25$-second farming), the creator acquired a large bounty of high runes, including direct Lo and Ber drops, presenting this haul to viewers as empirical validation of \texttt{/players~5}.
+
+This argument commits a classic \textbf{attribution fallacy}: mistaking the sheer brute-force volume of a sample ($72{,}000$ trials) for the efficiency of the underlying distribution. In a universe of $N_{\text{pat}} = 65{,}534$ patterns, opening $72{,}000$ superchests will shower any player in dozens of high runes simply by the Law of Large Numbers. The pertinent scientific question is not whether $12{,}000$ runs yielded loot, but \textbf{how much expected rune value was permanently forfeited} by running those $12{,}000$ runs on \texttt{/players~5} rather than \texttt{/players~7}.
+
+Table~\ref{tab:sirfox} presents the exact expected drop balance sheet over $72{,}000$ superchest openings across both player settings under the reverse-engineered locked/unlocked distribution.
+
+\begin{table}[htbp]
+\centering
+\caption{Expected rune drops over $N = 12{,}000$ runs ($72{,}000$ superchests opened) on \texttt{/players~5} vs.\ \texttt{/players~7}, demonstrating the net opportunity cost incurred by \texttt{SirFoxGaming}~\cite{sirfox2023}.}
+\label{tab:sirfox}
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Rune & $\mathbb{E}[\text{Drops} \mid \texttt{/p5}]$ & $\mathbb{E}[\text{Drops} \mid \texttt{/p7}]$ & Net Difference ($\texttt{p7} - \texttt{p5}$) & Relative Change \\
+\midrule
+Mal (\#23) & $10.99$ & $15.60$ & $\mathbf{+4.61}$ & $+42.0\%$ \\
+Ist (\#24) & $5.71$  & $5.93$  & $+0.22$ & $+3.8\%$ \\
+Gul (\#25) & $5.49$  & $12.09$ & $\mathbf{+6.59}$ & $+120.0\%$ \\
+Vex (\#26) & $6.59$  & $6.59$  & $0.00$ & $0.0\%$ \\
+Ohm (\#27) & $2.20$  & $5.49$  & $\mathbf{+3.30}$ & $+150.0\%$ \\
+Lo (\#28)  & $4.39$  & $2.20$  & $-2.20$ & $-50.0\%$ \\
+Sur (\#29) & $5.93$  & $9.89$  & $\mathbf{+3.96}$ & $+66.7\%$ \\
+Ber (\#30) & $4.39$  & $2.20$  & $-2.20$ & $-50.0\%$ \\
+\midrule
+\textbf{Total High Runes (Vex--Ber)} & $\mathbf{23.51}$ & $\mathbf{26.37}$ & $\mathbf{+2.86}$ & $\mathbf{+12.1\%}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The breakdown in Table~\ref{tab:sirfox} exposes the psychological cognitive trap behind \texttt{SirFoxGaming}'s conclusion:
+\begin{enumerate}
+    \item \textbf{The Direct Drop Saliency Bias:} Content creators are heavily biased by the visual thrill of seeing the exact string ``Ber Rune'' or ``Lo Rune'' drop on the ground. On \texttt{/players~5}, direct Ber and Lo runes drop twice as often ($4.39$ vs.\ $2.20$ expected drops each). To an untrained observer, $4$ direct Bers and $4$ direct Los look like extraordinary wealth.
+    \item \textbf{The Sur-to-Ber Cube Invariance:} What the creator failed to account for is that on \texttt{/players~7}, the chest table substitutes those $2.20$ direct Bers with \textbf{$3.96$ additional Sur runes} ($9.89$ vs.\ $5.93$). In the Horadric Cube, $3.96\text{ Sur} = 1.98\text{ Ber}$. Combining direct Ber drops with cubed Sur drops yields:
+    \begin{align*}
+        \text{Ber-equivalents}(\texttt{/p5}) &= 4.39 + \frac{5.93}{2} = \mathbf{7.36\text{ Bers}}, \\
+        \text{Ber-equivalents}(\texttt{/p7}) &= 2.20 + \frac{9.89}{2} = \mathbf{7.15\text{ Bers}}.
+    \end{align*}
+    Across an entire career of $12{,}000$ runs, the difference in Ber-tier purchasing power between the two settings is a negligible $0.21\text{ Ber}$ ($\approx 1/5\text{th}$ of a single Ber drop—a triviality entirely swallowed by binomial variance).
+    \item \textbf{The Crippling Deficit in Endgame Runeword Currency:} While achieving parity on Ber-tier purchasing power, \texttt{SirFoxGaming}'s choice of \texttt{/players~5} imposed a staggering toll on his character's wider arsenal:
+    \begin{itemize}
+        \item \textbf{Ohm Runes ($-3.30$ forfeited, a $60.0\%$ deficit):} \texttt{/players~7} produces $2.5\times$ as many Ohm runes ($5.49$ vs.\ $2.20$). That is more than \textbf{three missing \emph{Call to Arms}} (or \emph{Exile} / \emph{Faith}) runewords.
+        \item \textbf{Gul Runes ($-6.59$ forfeited, a $54.6\%$ deficit):} \texttt{/players~7} produces more than double the Gul runes ($12.09$ vs.\ $5.49$), representing more than \textbf{three additional \emph{Heart of the Oak}} weapons via $2\text{ Gul} \to 1\text{ Vex}$.
+        \item \textbf{Mal Runes ($-4.61$ forfeited):} Needed in pairs for \emph{Call to Arms}, \emph{Grief}, and \emph{Infinity}.
+        \item \textbf{Overall High Rune Deficit:} Summed across the entire Vex--Ber tier, running \texttt{/players~5} yielded nearly \textbf{three fewer High Runes} in total ($23.51$ vs.\ $26.37$, a net deficit of $2.86$ High Runes), as the surplus of Sur and Ohm on \texttt{/players~7} easily outweighed the direct Ber and Lo drops on \texttt{/players~5}.
+    \end{itemize}
+\end{enumerate}
+
+Far from proving that ``this is why you run Lower Kurast on \texttt{/players~5},'' \texttt{SirFoxGaming}'s marathon stands as a cautionary tale: by spending $83$ hours grinding on \texttt{/players~5}, he forfeited nearly $4$ Sur runes, $3.3$ Ohm runes, $6.6$ Gul runes, and $4.6$ Mal runes—all to chase the psychological dopamine of direct orange text that the Horadric Cube provides automatically on \texttt{/players~7}.
+
+\FloatBarrier
+\section{Conclusion}
+
+In unseeded single-player \emph{Diablo~II: Resurrected}, the Lower Kurast superchest grind is governed by a stationary Bernoulli process with $p_{\text{run}} \approx 1/455.51$ for Vex--Ber on \texttt{/players~7} under the exact locked/unlocked chest tables reverse-engineered by \texttt{Fruit}~\cite{fruit_d2pg} and verified by \texttt{fearedbliss}~\cite{fearedbliss_lk}. Because the game's PRNG transitions are unweighted and initial session seeds are drawn from unknown system entropy, performing ``random actions'' prior to opening superchests merely applies a measure-preserving shift to a uniform distribution, leaving drop probabilities strictly invariant. Prolonged dry spells of $2{,}000$ to $2{,}460$ runs are $2.50\sigma$--$2.84\sigma$ Gaussian-equivalent tail events ($1.23\%$ to $0.45\%$ single-wait probability, or $16.98\%$ to $6.52\%$ across a $15$-High-Rune career), and the fact that \texttt{Dead\_Sett}'s first High Rune dropped $461$ runs after run $2{,}000$ matches the unconditional memoryless expectation ($\mu_T = 455.51$ runs) to within $1.2\%$. Finally, when Horadric Cubing is modeled via an exact binary-radix absorbing Markov chain, \texttt{/players~7} strictly dominates \texttt{/players~5} in expected runs and tail risk for every rune from Mal through Ber—including the Lo rune ($1{,}569.9$ vs.\ $1{,}714.2$ expected runs). While \texttt{/players~5} yields a trivial $5\%$ edge for targeting isolated Pul or Um runes, targeting mid-runes in LK rather than at the Hell Countess is irrational, and doing so sacrifices the massive yield of Mal--Ber runes. Ultimately, the antidotes to a brutal Lower Kurast drought are not log-kicking rituals or \texttt{/players~5} detours, but a fast two-campfire map, a ruthless loot filter, and the Horadric Cube: the generator is not stuck, so keep teleporting, cube your Puls through Sur, and let the law of large numbers do the rest.
+
+\begin{thebibliography}{9}
+
+\bibitem{deadsett2024}
+Dead\_Sett, \emph{Watch this BEFORE you run Lower Kurast}, YouTube, 2024.
+
+\bibitem{feller1968}
+W.~Feller, \emph{An Introduction to Probability Theory and Its Applications}, 3rd~ed., vol.~1, John Wiley \& Sons, New York, 1968.
+
+\bibitem{fearedbliss_lk}
+fearedbliss, \emph{Lower Kurast Pattern Verification and Single-Player Drop Mechanics}, Diablo~II Research and Archival Repository, 2020.
+
+\bibitem{fruit_d2pg}
+Fruit (\texttt{bonqen}), \emph{Diablo~II Pattern Generator} (\texttt{d2pg}), Reverse engineering and exact drop pattern generation for superchests, 2018.
+
+\bibitem{ggm2023}
+Ginger Gaming Mentor, \emph{D2R It's Raining Ber Runes: Seed Manipulation in Diablo~II: Resurrected}, YouTube, 2023.
+
+\bibitem{kemeny_snell}
+J.~G.~Kemeny and J.~L.~Snell, \emph{Finite Markov Chains}, D.~Van Nostrand Company, Princeton, NJ, 1960.
+
+\bibitem{nefarius_levels}
+Nefarius, \emph{The Phrozen Keep File Guides: \texttt{levels.txt} and \texttt{TreasureClassEx.txt}}, The Phrozen Keep Modding Knowledge Base, 2004--2006.
+
+\bibitem{sirfox2023}
+SirFoxGaming, \emph{12000 LOWER KURAST RUNS ON P5 (This is why you run Lower Kurast on Players 5)}, YouTube, 2023. \url{https://www.youtube.com/watch?v=yPJIhJuISvg}.
+
+\bibitem{slivenius2024}
+Slivenius, \emph{You are running LK wrong. (Statistical analysis)}, Reddit, \texttt{r/diablo2}, 2024. \url{https://www.reddit.com/r/diablo2/comments/1g2eo10/you_are_running_lk_wrong_statistical_analysis/}.
+
+\bibitem{thehappydev_d2runes}
+TheHappyDev, \emph{Lower Kurast (LK) Farming Guide and Drop Patterns}, \texttt{d2runes.io}, \url{https://d2runes.io/rune-farming/lk-farming}.
+
+\end{thebibliography}
+
+\end{document}

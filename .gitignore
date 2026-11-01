@@ -1,0 +1,8 @@
+*.pdf_original
+*.pyc
+*.jsonl
+code/audit_metadata.py
+referee_*.md
+paper/lk_cubing_figures.pdf
+paper/lk_figures.pdf
+paper/lk_markov_board.pdf
